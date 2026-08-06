@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Admin User",
+    "email": "admin@sunpharma.com",
+    "password": "admin123",
+    "role": "Admin",
+    "isActive": true
+  },
+  {
+    "id": 2,
+    "name": "Kamal Deep",
+    "email": "kamal@sunpharma.com",
+    "password": "kamal123",
+    "role": "SPOC",
+    "isActive": true
+  },
+  {
+    "id": 3,
+    "name": "Viewer User",
+    "email": "viewer@sunpharma.com",
+    "password": "view123",
+    "role": "Viewer",
+    "isActive": true
+  }
+]
