@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readData } from '../../../lib/jsonDB';
+import { readData } from '../../lib/jsonDB';
 
 export async function GET() {
   try {
