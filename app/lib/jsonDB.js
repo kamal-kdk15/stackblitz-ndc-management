@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import pkg from 'pg';
 const { Pool } = pkg;
 
@@ -5,6 +7,30 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+const dataDir = path.join(process.cwd(), 'app', 'data');
+
+async function readFallbackData(fileName) {
+  try {
+    const filePath = path.join(dataDir, fileName);
+    const raw = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    console.warn('Fallback JSON read failed for', fileName, error.message);
+    return [];
+  }
+}
+
+async function writeFallbackData(fileName, data) {
+  try {
+    const filePath = path.join(dataDir, fileName);
+    const json = JSON.stringify(data, null, 2);
+    await fs.mkdir(dataDir, { recursive: true });
+    await fs.writeFile(filePath, json, 'utf8');
+  } catch (error) {
+    console.warn('Fallback JSON write failed for', fileName, error.message);
+  }
+}
 
 export async function readData(fileName) {
   try {
@@ -71,7 +97,7 @@ export async function readData(fileName) {
     return [];
   } catch (e) {
     console.error('DB Read Error:', e);
-    return [];
+    return readFallbackData(fileName);
   }
 }
 
@@ -135,5 +161,13 @@ export async function writeData(fileName, data) {
     }
   } catch (e) {
     console.error('DB Write Error:', e);
+
+    if (Array.isArray(data)) {
+      await writeFallbackData(fileName, data);
+    } else {
+      const existing = await readFallbackData(fileName);
+      const next = Array.isArray(existing) ? [data, ...existing] : [data];
+      await writeFallbackData(fileName, next);
+    }
   }
 }
