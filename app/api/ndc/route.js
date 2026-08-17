@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../lib/jsonDB';
 import { logAudit } from '../../lib/audit';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const data = await readData('ndc.json');

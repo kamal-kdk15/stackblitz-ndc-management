@@ -22,7 +22,7 @@ export default function AuditPage() {
 
   async function fetchAudit() {
     try {
-      const res = await fetch('/api/audit');
+      const res = await fetch('/api/audit', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setLogs(data.data);
     } catch (e) {

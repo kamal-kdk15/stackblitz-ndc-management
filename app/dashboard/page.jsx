@@ -23,7 +23,7 @@ export default function Dashboard() {
 
   async function fetchData() {
     try {
-      const res = await fetch('/api/ndc');
+      const res = await fetch('/api/ndc', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         const registry = data.data;
@@ -42,7 +42,7 @@ export default function Dashboard() {
       console.log(e);
     }
     try {
-      const res2 = await fetch('/api/changes');
+      const res2 = await fetch('/api/changes', { cache: 'no-store' });
       if (res2.ok) {
         const data2 = await res2.json();
         const changeItems = Array.isArray(data2?.data) ? data2.data : [];
