@@ -10,7 +10,14 @@ export async function readData(fileName) {
   try {
     if (fileName === 'users.json') {
       const result = await pool.query('SELECT * FROM users');
-      return result.rows;
+      return result.rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        password: r.password,
+        role: r.role,
+        isActive: r.is_active ?? r.isActive ?? true,
+      }));
 
     } else if (fileName === 'ndc.json') {
       const result = await pool.query(

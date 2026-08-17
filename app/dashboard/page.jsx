@@ -45,10 +45,11 @@ export default function Dashboard() {
       const res2 = await fetch('/api/changes');
       if (res2.ok) {
         const data2 = await res2.json();
+        const changeItems = Array.isArray(data2?.data) ? data2.data : [];
         if (data2.success) {
           setStats((prev) => ({
             ...prev,
-            pendingChanges: data2.data.filter((r) => r.status === 'Pending')
+            pendingChanges: changeItems.filter((r) => r.status === 'Pending')
               .length,
           }));
         }

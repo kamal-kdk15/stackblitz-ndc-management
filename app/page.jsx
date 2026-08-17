@@ -12,22 +12,29 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      const contentType = res.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson ? await res.json() : { success: false, message: 'Unable to sign in. Please try again.' };
 
-    if (!data.success) {
-      setError(data.message);
-      return;
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Unable to sign in. Please try again.');
+        return;
+      }
+
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError(err.message || 'Unable to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem('user', JSON.stringify(data.user));
-    window.location.href = '/dashboard';
   }
 
   return (
