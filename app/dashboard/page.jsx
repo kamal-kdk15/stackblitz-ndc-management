@@ -103,25 +103,28 @@ export default function Dashboard() {
 
         <div style={s.statsRow}>
           {[
-            { label: 'Labeler Code', value: '70095', sub: 'Sun Pharma' },
+            { label: 'Labeler Code', value: '70095', sub: 'Sun Pharma', href: null },
             {
               label: 'Product Codes Used',
               value: `${stats.totalNDC} / 999`,
               sub: 'Sequential codes assigned',
+              href: '/registry',
             },
-            { label: 'Total NDCs', value: stats.totalNDC, sub: 'Generated' },
+            { label: 'Total NDCs', value: stats.totalNDC, sub: 'Generated', href: '/registry' },
 
             {
               label: 'Active',
               value: stats.activeNDC,
               sub: 'Currently active',
               color: '#2D6A4F',
+              href: '/registry',
             },
 
             {
               label: 'Products',
               value: stats.uniqueProducts,
               sub: 'Unique drugs',
+              href: '/products',
             },
             // {
             //   label: 'Pending',
@@ -130,7 +133,20 @@ export default function Dashboard() {
             //   color: stats.pendingChanges > 0 ? '#C4520A' : '#1A1A1A',
             // },
           ].map((c, i) => (
-            <div key={i} style={s.statCard}>
+            <div
+              key={i}
+              style={{
+                ...s.statCard,
+                cursor: c.href ? 'pointer' : 'default',
+              }}
+              onMouseEnter={(e) => {
+                if (c.href) e.currentTarget.style.borderColor = '#E8650A';
+              }}
+              onMouseLeave={(e) => {
+                if (c.href) e.currentTarget.style.borderColor = '#EDE8E0';
+              }}
+              onClick={() => c.href && router.push(c.href)}
+            >
               <div style={{ ...s.statNum, color: c.color || '#1A1A1A' }}>
                 {c.value}
               </div>
@@ -282,6 +298,7 @@ const s = {
     borderRadius: '10px',
     padding: '18px',
     border: '1px solid #EDE8E0',
+    transition: 'border-color 0.15s ease',
   },
   statNum: {
     fontSize: '28px',

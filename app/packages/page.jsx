@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
+import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
 
 export default function PackagesPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function PackagesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingPackage, setEditingPackage] = useState(null);
 const [savingEdit, setSavingEdit] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -172,6 +174,11 @@ const [savingEdit, setSavingEdit] = useState(false);
     pkg.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  function handleCreateNDCSuccess(ndc) {
+    setShowWizard(false);
+    fetchData();
+  }
+
   if (!user) return null;
 
   if (loading) {
@@ -194,9 +201,11 @@ const [savingEdit, setSavingEdit] = useState(false);
             <h1 style={s.title}>Packages</h1>
             <p style={s.sub}>Manage package variants for your products</p>
           </div>
-          <button style={s.btn} onClick={() => router.push('/dashboard')}>
-            ← Dashboard
-          </button>
+          {user?.role !== 'Viewer' && (
+            <button style={s.btn} onClick={() => setShowWizard(true)}>
+              + Create NDC
+            </button>
+          )}
         </div>
 
         {/* Product Selector */}
@@ -483,6 +492,13 @@ const [savingEdit, setSavingEdit] = useState(false);
     </div>
   </div>
 )}
+      {showWizard && (
+        <CreateNDCWizard
+          user={user}
+          onClose={() => setShowWizard(false)}
+          onSuccess={handleCreateNDCSuccess}
+        />
+      )}
     </Layout>
   );
 }

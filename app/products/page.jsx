@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
+import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingProduct, setEditingProduct] = useState(null);
 const [savingEdit, setSavingEdit] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -141,6 +143,11 @@ const handleSaveEdit = async () => {
     return matchesStatus && matchesSearch;
   });
 
+  function handleCreateNDCSuccess(ndc) {
+    setShowWizard(false);
+    fetchData();
+  }
+
   if (!user) return null;
 
   if (loading) {
@@ -163,12 +170,11 @@ const handleSaveEdit = async () => {
             <h1 style={s.title}>Products</h1>
             <p style={s.sub}>Manage product master data</p>
           </div>
-          <button
-            style={s.btn}
-            onClick={() => router.push('/dashboard')}
-          >
-            ← Dashboard
-          </button>
+          {user?.role !== 'Viewer' && (
+            <button style={s.btn} onClick={() => setShowWizard(true)}>
+              + Create NDC
+            </button>
+          )}
         </div>
 
         {/* Controls */}
@@ -406,6 +412,13 @@ const handleSaveEdit = async () => {
     </div>
   </div>
 )}
+      {showWizard && (
+        <CreateNDCWizard
+          user={user}
+          onClose={() => setShowWizard(false)}
+          onSuccess={handleCreateNDCSuccess}
+        />
+      )}
     </Layout>
   );
 }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
+import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
 
 export default function RegistryPage() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function RegistryPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [loading, setLoading] = useState(true);
-
+ const [showWizard, setShowWizard] = useState(false);
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (!stored) router.push('/');
@@ -20,16 +21,16 @@ export default function RegistryPage() {
     }
   }, []);
 
-  async function fetchRegistry() {
-    try {
-      const res = await fetch('/api/ndc');
-      const data = await res.json();
-      if (data.success) setRegistry(data.data);
-    } catch (e) {
-      console.log(e);
-    }
-    setLoading(false);
+ async function fetchRegistry() {
+  try {
+    const res = await fetch('/api/ndc', { cache: 'no-store' });  
+    const data = await res.json();
+    if (data.success) setRegistry(data.data);
+  } catch (e) {
+    console.log(e);
   }
+  setLoading(false);
+}
 
   const filtered = registry.filter((r) => {
     const matchSearch =
@@ -39,7 +40,10 @@ export default function RegistryPage() {
     const matchStatus = filterStatus ? r.status === filterStatus : true;
     return matchSearch && matchStatus;
   });
-
+function handleCreateNDCSuccess(ndc) {
+    setShowWizard(false);
+    fetchRegistry(); 
+}
   if (!user) return null;
 
   return (
@@ -52,8 +56,8 @@ export default function RegistryPage() {
               All generated National Drug Codes — Sun Pharma Industries Ltd.
             </p>
           </div>
-          {user.role !== 'Viewer' && (
-            <button style={s.primaryBtn} onClick={() => router.push('/ndc')}>
+         {user?.role !== 'Viewer' && (
+            <button style={s.primaryBtn} onClick={() => setShowWizard(true)}>
               + Create NDC
             </button>
           )}
@@ -196,6 +200,13 @@ export default function RegistryPage() {
           )}
         </div>
       </div>
+            {showWizard && (
+        <CreateNDCWizard
+          user={user}
+          onClose={() => setShowWizard(false)}
+          onSuccess={handleCreateNDCSuccess}
+        />
+      )}
     </Layout>
   );
 }

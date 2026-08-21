@@ -574,10 +574,10 @@ function handleNext() {
                   <strong>Product:</strong>
                   <span>{product?.product_name}</span>
                 </div>
-                <div style={s.reviewRow}>
+                {/* <div style={s.reviewRow}>
                   <strong>Generic:</strong>
                   <span>{product?.generic_name || '-'}</span>
-                </div>
+                </div> */}
                 <div style={s.reviewRow}>
                   <strong>Strength:</strong>
                   <span>{product?.strength}</span>

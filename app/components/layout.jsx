@@ -6,8 +6,8 @@ const navItems = [
   { href: '/dashboard', icon: '⊞', label: 'Dashboard' },
   // { href: '/ndc', icon: '+', label: 'Create NDC' },
   { href: '/registry', icon: '≡', label: 'NDC Registry' },
-  { href: '/products', icon: '▪', label: 'Products' },
-  { href: '/packages', icon: '▢', label: 'Packages' },
+{ href: '/products', icon: '■', label: 'Products' },    
+{ href: '/packages', icon: '◫', label: 'Packages' },    
   { href: '/audit', icon: '◎', label: 'Audit Trail' },
 ];
 
@@ -92,7 +92,7 @@ export default function Layout({ children, current }) {
               <div style={s.userRole}>{user?.role}</div>
             </div>
             <button style={s.logoutIcon} onClick={logout} title="Sign out">
-              ↪
+              ↪ Logout
             </button>
           </div>
         </div>
@@ -274,15 +274,19 @@ const s = {
     fontSize: '11px',
     color: '#999',
   },
-  logoutIcon: {
-    background: 'transparent',
-    border: 'none',
-    fontSize: '16px',
-    color: '#CCC',
-    cursor: 'pointer',
-    padding: '4px',
-    flexShrink: 0,
-  },
+ logoutIcon: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '5px',
+  background: 'transparent',
+  border: 'none',
+  fontSize: '13px',
+  fontWeight: '600',
+  color: '#C4520A',      
+  cursor: 'pointer',
+  padding: '6px 8px',
+  flexShrink: 0,
+},
   main: {
     marginLeft: '252px',
     flex: 1,

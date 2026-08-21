@@ -160,17 +160,22 @@ export async function writeData(fileName, data) {
 
   // BULK STATUS UPDATE FOR ALL NDCs OF A PRODUCT
   if (item._bulkUpdate) {
+     console.log(' NDC bulk update called with:', {
+    status: item.status,
+    product_code: item.product_code,
+    product_code_type: typeof item.product_code
+  });
 
     const result = await pool.query(`
-      UPDATE ndc_registry
-      SET status = $1
-      WHERE split_part(ndc_code, '-', 2) = $2
-      RETURNING *
-    `, [
-      item.status,
-      item.product_code
-    ]);
-
+  UPDATE ndc_registry
+  SET status = $1
+  WHERE TRIM(split_part(ndc_code, '-', 2)) = TRIM($2)
+  RETURNING *
+`, [
+  item.status,
+  item.product_code
+]);
+ console.log(' NDC bulk update result:', result.rowCount, 'rows affected');
     return result.rows;
   }
 
