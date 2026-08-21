@@ -1,1 +1,72 @@
-[]
+[
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:26:32.551Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:27.839Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:27.764Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:27.582Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:27.162Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:27.056Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:26.476Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:26.106Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "",
+    "oldValue": "Inactive",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:23:21.588Z"
+  },
+  {
+    "action": "PRODUCT_STATUS_CHANGED",
+    "recordId": "001",
+    "oldValue": "Active",
+    "newValue": "Inactive",
+    "timestamp": "2026-08-18T10:02:33.535Z"
+  }
+]

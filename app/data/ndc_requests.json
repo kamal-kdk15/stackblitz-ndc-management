@@ -1,0 +1,40 @@
+[
+  {
+    "_update": true,
+    "id": 1787037169915,
+    "status": "Approved",
+    "reviewed_by": "Admin User",
+    "reviewed_at": "2026-08-18T07:14:11.326Z"
+  },
+  {
+    "id": 1787037169915,
+    "product_name": "cough syrup",
+    "strength": "100 ml",
+    "dosage_form": "Syrup",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA323",
+    "distributor": "-",
+    "status": "PendingAdminReview",
+    "created_by": "Kamal Deep",
+    "created_at": "2026-08-18T07:12:49.915Z"
+  },
+  {
+    "_update": true,
+    "id": 1787035317603,
+    "status": "Approved",
+    "reviewed_by": "Admin User",
+    "reviewed_at": "2026-08-18T06:43:36.385Z"
+  },
+  {
+    "id": 1787035317603,
+    "product_name": "paracetamol",
+    "strength": "200 mg",
+    "dosage_form": "Tablet",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA44324",
+    "distributor": "-",
+    "status": "PendingAdminReview",
+    "created_by": "Kamal Deep",
+    "created_at": "2026-08-18T06:41:57.603Z"
+  }
+]

@@ -1,11 +1,22 @@
 import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../lib/jsonDB';
 import { logAudit } from '../../lib/audit';
+import { validateAssignedCodes } from '../../lib/ndcRules.mjs';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const type = request.nextUrl.searchParams.get('type');
+
+    if (type === 'pending') {
+      const pendingRequests = await readData('ndc_requests.json');
+      return NextResponse.json({
+        success: true,
+        data: pendingRequests.filter((item) => item.status !== 'Activated')
+      });
+    }
+
     const data = await readData('ndc.json');
 
     return NextResponse.json({
@@ -27,19 +38,12 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const {
-      product,
-      strength,
-      dosage,
-      rxOtc,
-      anda,
-      distributor,
-      packs,
-      createdBy,
-      role
-    } = await request.json();
+    const body = await request.json();
 
-    if (role === 'Viewer') {
+    // Determine if this is wizard-based creation or old SPOC submission
+    const isWizard = body.ndc_code || body.product_code;
+
+    if (body.role === 'Viewer') {
       return NextResponse.json(
         {
           success: false,
@@ -49,91 +53,139 @@ export async function POST(request) {
       );
     }
 
-    if (
-      !product ||
-      !strength ||
-      !dosage ||
-      !rxOtc ||
-      !anda ||
-      !packs
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'All mandatory fields are required'
-        },
-        { status: 400 }
-      );
-    }
+    if (isWizard) {
+      // Wizard-based creation from Product + Package selection
+      const {
+        ndc_code,
+        product_name,
+        strength,
+        dosage_form,
+        rx_otc,
+        anda_number,
+        distributor,
+        created_by,
+        role
+      } = body;
 
-    const registry = await readData('ndc.json');
-
-    const labeler = '70095';
-
-    const productCode = String(
-      new Set(
-        registry.map(r => r.ndc_code.split('-')[1])
-      ).size + 1
-    ).padStart(3, '0');
-
-    const generated = [];
-
-    for (let i = 1; i <= parseInt(packs); i++) {
-      const pkgCode = String(i).padStart(2, '0');
-
-      const ndc = `${labeler}-${productCode}-${pkgCode}`;
-
-      if (registry.find(r => r.ndc_code === ndc)) {
+      if (!ndc_code || !product_name) {
         return NextResponse.json(
           {
             success: false,
-            message: `Duplicate NDC: ${ndc}`
+            message: 'Missing required fields'
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check if NDC already exists
+      const registry = await readData('ndc.json');
+      if (registry.some(r => r.ndc_code === ndc_code)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `NDC ${ndc_code} already exists`
           },
           { status: 409 }
         );
       }
 
-      const newRecord = {
-        ndc_code: ndc,
+      const newNDC = {
+        id: Date.now(),
+        ndc_code,
+        product_name,
+        strength,
+        dosage_form,
+        rx_otc,
+        anda_number,
+        distributor: distributor || '-',
+        labeler_code: '70095',
+        status: 'Active',
+        created_by,
+        created_at: new Date().toISOString()
+      };
+
+      await writeData('ndc.json', newNDC);
+      await logAudit(
+        'NDC_CREATED',
+        created_by,
+        ndc_code,
+        '-',
+        ndc_code
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'NDC created successfully',
+        ndc: newNDC
+      });
+    } else {
+      // Old SPOC submission flow (if still in use)
+      const {
+        product,
+        strength,
+        dosage,
+        rxOtc,
+        anda,
+        distributor,
+        createdBy,
+        role
+      } = body;
+
+      if (!product || !strength || !dosage || !rxOtc || !anda) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'All mandatory fields are required'
+          },
+          { status: 400 }
+        );
+      }
+
+      if (role !== 'SPOC') {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'Only SPOCs can submit NDC requests'
+          },
+          { status: 403 }
+        );
+      }
+
+      const newRequest = {
+        id: Date.now(),
         product_name: product,
         strength,
         dosage_form: dosage,
         rx_otc: rxOtc,
         anda_number: anda,
         distributor: distributor || '-',
-        labeler_code: labeler,
-        status: 'Active',
+        status: 'PendingAdminReview',
         created_by: createdBy,
         created_at: new Date().toISOString()
       };
 
-      await writeData('ndc.json', newRecord);
+      await writeData('ndc_requests.json', newRequest);
+      await logAudit(
+        'NDC_REQUEST_SUBMITTED',
+        createdBy,
+        String(newRequest.id),
+        '-',
+        'PendingAdminReview'
+      );
 
-      generated.push(ndc);
+      return NextResponse.json({
+        success: true,
+        message: 'NDC request submitted successfully and is awaiting admin approval.',
+        requestId: newRequest.id
+      });
     }
-
-    // Audit Trail
-    await logAudit(
-      'NDC_CREATED',
-      createdBy,
-      generated.join(', '),
-      '-',
-      generated.join(', ')
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: 'NDC Generated Successfully',
-      ndcCodes: generated
-    });
-
   } catch (error) {
     console.error('NDC POST Error:', error);
 
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to generate NDC'
+        message: 'Failed to create NDC'
       },
       { status: 500 }
     );
@@ -143,56 +195,143 @@ export async function POST(request) {
 export async function PATCH(request) {
   try {
     const {
-      ndc_code,
-      status,
-      updatedBy
+      id,
+      action,
+      updatedBy,
+      role
     } = await request.json();
 
-    const registry = await readData('ndc.json');
-
-    const record = registry.find(
-      r => r.ndc_code === ndc_code
-    );
-
-    if (!record) {
+    if (role !== 'Admin') {
       return NextResponse.json(
         {
           success: false,
-          message: 'NDC not found'
+          message: 'Only Admin can manage NDC'
+        },
+        { status: 403 }
+      );
+    }
+
+    if (!id || !action) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Request ID and action are required'
+        },
+        { status: 400 }
+      );
+    }
+
+    const pendingRequests = await readData('ndc_requests.json');
+    const requestItem = pendingRequests.find(
+      (item) => String(item.id) === String(id)
+    );
+
+    if (!requestItem) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'NDC request not found'
         },
         { status: 404 }
       );
     }
 
-    const oldStatus = record.status;
+    if (action === 'activate') {
+      if (requestItem.status === 'Activated') {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'This NDC is already activated'
+          },
+          { status: 409 }
+        );
+      }
 
-    await writeData('ndc.json', {
-      _update: true,
-      ndc_code,
-      status
-    });
+      const newRecord = {
+        ndc_code: requestItem.ndc_code,
+        product_name: requestItem.product_name,
+        strength: requestItem.strength,
+        dosage_form: requestItem.dosage_form,
+        rx_otc: requestItem.rx_otc,
+        anda_number: requestItem.anda_number,
+        distributor: requestItem.distributor || '-',
+        labeler_code: '70095',
+        status: 'Active',
+        created_by: requestItem.created_by,
+        created_at: requestItem.created_at || new Date().toISOString()
+      };
 
-    // Audit Trail
-    await logAudit(
-      'STATUS_CHANGED',
-      updatedBy,
-      ndc_code,
-      oldStatus,
-      status
-    );
+      await writeData('ndc.json', newRecord);
+      await writeData('ndc_requests.json', {
+        _update: true,
+        id: requestItem.id,
+        status: 'Activated',
+        reviewed_by: updatedBy,
+        reviewed_at: new Date().toISOString()
+      });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Status updated'
-    });
+      await logAudit(
+        'NDC_ACTIVATED',
+        updatedBy,
+        requestItem.ndc_code,
+        'PendingAdminReview',
+        'Active'
+      );
 
+      return NextResponse.json({
+        success: true,
+        message: 'NDC activated successfully.',
+        ndcCode: requestItem.ndc_code
+      });
+    } else if (action === 'deactivate') {
+      const registry = await readData('ndc.json');
+      const ndcRecord = registry.find((r) => r.ndc_code === requestItem.ndc_code);
+
+      if (!ndcRecord) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: 'NDC not found in registry'
+          },
+          { status: 404 }
+        );
+      }
+
+      await writeData('ndc.json', {
+        _update: true,
+        ndc_code: requestItem.ndc_code,
+        status: 'Inactive'
+      });
+
+      await logAudit(
+        'NDC_DEACTIVATED',
+        updatedBy,
+        requestItem.ndc_code,
+        'Active',
+        'Inactive'
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'NDC deactivated successfully.',
+        ndcCode: requestItem.ndc_code
+      });
+    } else {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Invalid action. Use activate or deactivate.'
+        },
+        { status: 400 }
+      );
+    }
   } catch (error) {
     console.error('NDC PATCH Error:', error);
 
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to update status'
+        message: 'Failed to update NDC'
       },
       { status: 500 }
     );

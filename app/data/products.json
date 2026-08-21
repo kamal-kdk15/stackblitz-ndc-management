@@ -1,0 +1,136 @@
+[
+  {
+    "id": 1787110678836,
+    "product_code": "620",
+    "product_name": "thyroxy",
+    "generic_name": "-",
+    "strength": "12 mg",
+    "dosage_form": "Tablet",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA6556",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Admin User",
+    "created_at": "2026-08-19T03:37:58.836Z"
+  },
+  {
+    "id": 1787110214514,
+    "product_code": "136",
+    "product_name": "thyroxin",
+    "generic_name": "-",
+    "strength": "25 mg",
+    "dosage_form": "Tablet",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA2321",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Admin User",
+    "created_at": "2026-08-19T03:30:14.514Z"
+  },
+  {
+    "id": 1787050390985,
+    "product_code": "321",
+    "product_name": "frag",
+    "generic_name": "-",
+    "strength": "100 ml",
+    "dosage_form": "Syrup",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA7676",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Admin User",
+    "created_at": "2026-08-18T10:53:10.985Z"
+  },
+  {
+    "id": 1787050348382,
+    "product_code": "321",
+    "product_name": "volini",
+    "generic_name": "-",
+    "strength": "50 gm",
+    "dosage_form": "Ointment",
+    "rx_otc": "OTC",
+    "anda_number": "ANDA4432",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Admin User",
+    "created_at": "2026-08-18T10:52:28.382Z"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "id": 1787048478901,
+    "product_code": "003",
+    "product_name": "glucose",
+    "generic_name": "-",
+    "strength": "10 ml",
+    "dosage_form": "Injection",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA2323",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Kamal Deep",
+    "created_at": "2026-08-18T10:21:18.901Z"
+  },
+  {
+    "_update": true,
+    "id": 1787047225508,
+    "status": "Inactive"
+  },
+  {
+    "id": 1787047225508,
+    "product_code": "001",
+    "product_name": "paracetamol",
+    "generic_name": "paracetamol",
+    "strength": "100 mg",
+    "dosage_form": "Tablet",
+    "rx_otc": "Rx",
+    "anda_number": "ANDA5453",
+    "labeler_code": "70095",
+    "status": "Active",
+    "created_by": "Kamal Deep",
+    "created_at": "2026-08-18T10:00:25.508Z"
+  }
+]

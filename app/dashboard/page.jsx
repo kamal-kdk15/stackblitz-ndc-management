@@ -2,9 +2,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
+import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
 
 export default function Dashboard() {
   const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [showWizard, setShowWizard] = useState(false);
   const [stats, setStats] = useState({
     totalNDC: 0,
     activeNDC: 0,
@@ -18,6 +21,8 @@ export default function Dashboard() {
   const [allData, setAllData] = useState([]);
 
   useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) setUser(JSON.parse(stored));
     fetchData();
   }, []);
 
@@ -74,6 +79,13 @@ export default function Dashboard() {
     setSearchResults(filtered);
   }
 
+  function handleCreateNDCSuccess(ndc) {
+    setShowWizard(false);
+    fetchData();
+  }
+
+  if (!user) return null;
+
   return (
     <Layout current="/dashboard">
       <div style={s.page}>
@@ -82,9 +94,11 @@ export default function Dashboard() {
             <h1 style={s.title}>Dashboard</h1>
             <p style={s.sub}>Sun Pharma Industries Ltd. — NDC Registry</p>
           </div>
-          <button style={s.btn} onClick={() => router.push('/ndc')}>
-            + Create NDC
-          </button>
+          {user?.role !== 'Viewer' && (
+            <button style={s.btn} onClick={() => setShowWizard(true)}>
+              + Create NDC
+            </button>
+          )}
         </div>
 
         <div style={s.statsRow}>
@@ -152,7 +166,7 @@ export default function Dashboard() {
                 <div style={s.emptySub}>
                   Create your first NDC to get started
                 </div>
-                <button style={s.btn} onClick={() => router.push('/ndc')}>
+                <button style={s.btn} onClick={() => setShowWizard(true)}>
                   + Create NDC
                 </button>
               </div>
@@ -213,6 +227,14 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {showWizard && (
+        <CreateNDCWizard
+          user={user}
+          onClose={() => setShowWizard(false)}
+          onSuccess={handleCreateNDCSuccess}
+        />
+      )}
     </Layout>
   );
 }

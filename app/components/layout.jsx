@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', icon: '⊞', label: 'Dashboard' },
-  { href: '/ndc', icon: '+', label: 'Create NDC' },
+  // { href: '/ndc', icon: '+', label: 'Create NDC' },
   { href: '/registry', icon: '≡', label: 'NDC Registry' },
-  // { href: '/changes', icon: '⇄', label: 'Change Requests' },
+  { href: '/products', icon: '▪', label: 'Products' },
+  { href: '/packages', icon: '▢', label: 'Packages' },
   { href: '/audit', icon: '◎', label: 'Audit Trail' },
 ];
 
