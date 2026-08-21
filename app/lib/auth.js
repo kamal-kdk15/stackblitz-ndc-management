@@ -61,7 +61,7 @@ export async function createSession(userId, request) {
     tokenHash,
     expiresAt,
     userAgent,
-    ipAddress
+   ipAddress,
   ]);
 
   return {
@@ -74,20 +74,14 @@ export async function createSession(userId, request) {
 
 // SET COOKIE
 export function setSessionCookie(token, expiresAt) {
-
   cookies().set({
     name: SESSION_COOKIE,
     value: token,
-
     httpOnly: true,
-
     secure: process.env.NODE_ENV === 'production',
-
     sameSite: 'lax',
-
     path: '/',
-
-    expires: expiresAt
+    maxAge: SESSION_DURATION_MS / 1000,  
   });
 
 }
