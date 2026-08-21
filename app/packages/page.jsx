@@ -16,6 +16,8 @@ export default function PackagesPage() {
   const [editingPackage, setEditingPackage] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [productQuery, setProductQuery] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
 
   useEffect(() => {
     fetch('/api/me')
@@ -43,6 +45,7 @@ export default function PackagesPage() {
         setProducts(data.data || []);
         if (data.data && data.data.length > 0) {
           setSelectedProductId(data.data[0].id);
+          setProductQuery(data.data[0].product_name);
           fetchPackagesByProduct(data.data[0].id);
         }
       }
@@ -53,10 +56,17 @@ export default function PackagesPage() {
     }
   };
 
-  const handleProductSelect = (productId) => {
-    setSelectedProductId(productId);
-    fetchPackagesByProduct(productId);
+  const handleProductSelect = (product) => {
+    setSelectedProductId(product.id);
+    setProductQuery(product.product_name);
+    setShowProductDropdown(false);
+    fetchPackagesByProduct(product.id);
   };
+
+  const matchingProducts = products.filter((p) =>
+    p.product_name?.toLowerCase().includes(productQuery.toLowerCase()) ||
+    p.product_code?.toLowerCase().includes(productQuery.toLowerCase())
+  );
 
   const fetchPackagesByProduct = async (productId) => {
     try {
@@ -208,17 +218,51 @@ export default function PackagesPage() {
         ) : (
           <div style={s.card}>
             <div style={s.filterRow}>
-              <select
-                value={selectedProductId || ''}
-                onChange={(e) => handleProductSelect(Number(e.target.value))}
-                style={{ ...s.filterSelect, flex: 1, minWidth: '240px' }}
-              >
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.product_name} (Code: {product.product_code}) - {product.status}
-                  </option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                <div style={s.searchWrap}>
+                  <span style={s.searchIcon}>🔍︎</span>
+                  <input
+                    style={s.searchInput}
+                    placeholder="Search product by name or code..."
+                    value={productQuery}
+                    onChange={(e) => {
+                      setProductQuery(e.target.value);
+                      setShowProductDropdown(true);
+                    }}
+                    onFocus={() => setShowProductDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowProductDropdown(false), 150)}
+                  />
+                </div>
+                {showProductDropdown && (
+                  <div style={s.dropdown}>
+                    {matchingProducts.length === 0 ? (
+                      <div style={s.dropdownEmpty}>No products match</div>
+                    ) : (
+                      matchingProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          style={{
+                            ...s.dropdownItem,
+                            ...(product.id === selectedProductId ? s.dropdownItemActive : {}),
+                          }}
+                          onMouseDown={() => handleProductSelect(product)}
+                          onMouseEnter={(e) => {
+                            if (product.id !== selectedProductId) e.currentTarget.style.background = '#FAF8F5';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (product.id !== selectedProductId) e.currentTarget.style.background = 'white';
+                          }}
+                        >
+                          <span style={s.dropdownItemName}>{product.product_name}</span>
+                          <span style={s.dropdownItemMeta}>
+                            Code: {product.product_code} · {product.status}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
               <div style={s.searchWrap}>
                 <span style={s.searchIcon}>🔍︎</span>
                 <input
@@ -512,6 +556,45 @@ const s = {
     cursor: 'pointer',
   },
   countBadge: { fontSize: '12px', color: '#AAA', whiteSpace: 'nowrap' },
+  dropdown: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    right: 0,
+    background: 'white',
+    border: '1.5px solid #EDE8E0',
+    borderRadius: '8px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
+    maxHeight: '260px',
+    overflowY: 'auto',
+    zIndex: 50,
+  },
+  dropdownEmpty: {
+    padding: '14px',
+    fontSize: '13px',
+    color: '#AAA',
+    textAlign: 'center',
+  },
+  dropdownItem: {
+    padding: '10px 14px',
+    cursor: 'pointer',
+    borderBottom: '1px solid #F5F2ED',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  dropdownItemActive: {
+    background: '#FFF0E6',
+  },
+  dropdownItemName: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  dropdownItemMeta: {
+    fontSize: '11px',
+    color: '#999',
+  },
   infoBox: {
     background: '#FAF8F5',
     borderBottom: '1px solid #EDE8E0',
