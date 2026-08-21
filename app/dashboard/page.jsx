@@ -20,11 +20,19 @@ export default function Dashboard() {
   const [searchResults, setSearchResults] = useState([]);
   const [allData, setAllData] = useState([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) setUser(JSON.parse(stored));
-    fetchData();
-  }, []);
+useEffect(() => {
+  fetch('/api/me')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.user) {
+        setUser(data.user);
+        fetchData();  
+      } else {
+        router.push('/');
+      }
+    })
+    .catch(() => router.push('/'));
+}, []);
 
   async function fetchData() {
     try {

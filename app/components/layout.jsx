@@ -17,16 +17,43 @@ export default function Layout({ children, current }) {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) router.push('/');
-    else setUser(JSON.parse(stored));
-  }, []);
+  fetch('/api/me')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.user) {
+        setUser(data.user);
+      } else {
+        router.push('/');   
+      }
+    })
+    .catch(() => router.push('/'));
+}, []);
+const handleLogout = async () => {
+  try {
+    const response = await fetch('/api/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: user?.name  
+      })
+    });
 
-  function logout() {
-    localStorage.removeItem('user');
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.message || 'Failed to logout');
+      return;
+    }
+
     router.push('/');
-  }
 
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Failed to logout');
+  }
+};
   if (!user) return null;
 
   return (
@@ -71,7 +98,7 @@ export default function Layout({ children, current }) {
           })}
         </nav>
 
-        <div style={s.sysInfo}>
+        {/* <div style={s.sysInfo}>
           <div style={s.sysRow}>
             <span style={s.sysDot} />
             <span style={s.sysText}>UAT Environment</span>
@@ -81,7 +108,7 @@ export default function Layout({ children, current }) {
               Labeler: <strong>70095</strong>
             </span>
           </div>
-        </div>
+        </div> */}
 
         {/* footer... */}
         <div style={s.footer}>
@@ -91,7 +118,7 @@ export default function Layout({ children, current }) {
               <div style={s.userName}>{user?.name}</div>
               <div style={s.userRole}>{user?.role}</div>
             </div>
-            <button style={s.logoutIcon} onClick={logout} title="Sign out">
+            <button style={s.logoutIcon} onClick={handleLogout} title="Sign out">
               ↪ Logout
             </button>
           </div>

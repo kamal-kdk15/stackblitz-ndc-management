@@ -12,15 +12,20 @@ export default function RegistryPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [loading, setLoading] = useState(true);
  const [showWizard, setShowWizard] = useState(false);
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) router.push('/');
-    else {
-      setUser(JSON.parse(stored));
-      fetchRegistry();
-    }
-  }, []);
 
+ useEffect(() => {
+  fetch('/api/me')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.user) {
+        setUser(data.user);
+        fetchRegistry();  
+      } else {
+        router.push('/');
+      }
+    })
+    .catch(() => router.push('/'));
+}, []);
  async function fetchRegistry() {
   try {
     const res = await fetch('/api/ndc', { cache: 'no-store' });  

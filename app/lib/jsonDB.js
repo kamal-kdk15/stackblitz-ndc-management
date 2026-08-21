@@ -33,16 +33,18 @@ async function writeFallbackData(fileName, data) {
 
 export async function readData(fileName) {
   try {
-    if (fileName === 'users.json') {
-      const result = await pool.query('SELECT * FROM users');
-      return result.rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        email: r.email,
-        password: r.password,
-        role: r.role,
-        isActive: r.is_active ?? r.isActive ?? true,
-      }));
+   if (fileName === 'users.json') {
+  const result = await pool.query('SELECT * FROM users');
+
+  return result.rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    password: r.password,
+    role: r.role,
+    isActive: r.is_active ?? r.isActive ?? true,
+    isLoggedIn: r.is_logged_in ?? false,
+  }));
 
     } else if (fileName === 'ndc.json') {
       const result = await pool.query(
@@ -156,7 +158,25 @@ export async function writeData(fileName, data) {
     const item = Array.isArray(data) ? data[0] : data;
     if (!item) return;
 
-   if (fileName === 'ndc.json') {
+if (fileName === 'users.json') {
+
+      if (item._loginStatus) {
+
+        const result = await pool.query(`
+          UPDATE users
+          SET is_logged_in = $1
+          WHERE id = $2
+          RETURNING *
+        `, [
+          item.is_logged_in,
+          item.id
+        ]);
+
+        return result.rows[0];
+      }
+
+    
+} else if (fileName === 'ndc.json') {
 
   // BULK STATUS UPDATE FOR ALL NDCs OF A PRODUCT
   if (item._bulkUpdate) {
