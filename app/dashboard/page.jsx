@@ -8,17 +8,20 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [systemConfig, setSystemConfig] = useState(null);
   const [stats, setStats] = useState({
-    totalNDC: 0,
-    activeNDC: 0,
-    pendingNDC: 0,
-    uniqueProducts: 0,
-    pendingChanges: 0,
-  });
+  totalNDC: 0,
+  activeNDC: 0,
+  pendingNDC: 0,
+  uniqueProducts: 0,
+  productCodesUsed: 0,
+  pendingChanges: 0,
+});
   const [recent, setRecent] = useState([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [allData, setAllData] = useState([]);
+const [productCodesUsed, setProductCodesUsed] = useState(0);
 
 useEffect(() => {
   fetch('/api/me')
@@ -27,12 +30,29 @@ useEffect(() => {
       if (data.success && data.user) {
         setUser(data.user);
         fetchData();  
+        fetchSystemConfig();
       } else {
         router.push('/');
       }
     })
     .catch(() => router.push('/'));
 }, []);
+
+async function fetchSystemConfig() {
+  try {
+    const res = await fetch('/api/admin/config', {
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.data) {
+      setSystemConfig(data.data);
+    }
+  } catch (error) {
+    console.error('Failed to fetch system config:', error);
+  }
+}
 
   async function fetchData() {
     try {
@@ -41,19 +61,51 @@ useEffect(() => {
       if (data.success) {
         const registry = data.data;
         setAllData(registry);
-        setStats({
-          totalNDC: registry.length,
-          activeNDC: registry.filter((r) => r.status === 'Active').length,
-          pendingNDC: registry.filter((r) => r.status === 'Pending').length,
-          uniqueProducts: [...new Set(registry.map((r) => r.product_name))]
-            .length,
-          pendingChanges: 0,
-        });
+      
+
+setStats({
+  totalNDC: registry.length,
+
+  activeNDC: registry.filter(
+    (r) => r.status === 'Active'
+  ).length,
+
+  pendingNDC: registry.filter(
+    (r) => r.status === 'Pending'
+  ).length,
+
+  uniqueProducts: [
+    ...new Set(
+      registry
+        .map((r) => r.product_name)
+        .filter(Boolean)
+    )
+  ].length,
+
+
+  pendingChanges: 0,
+});
         setRecent(registry.slice(0, 5));
       }
     } catch (e) {
       console.log(e);
     }
+    try {
+  const productsRes = await fetch('/api/products', {
+    cache: 'no-store'
+  });
+
+  const productsData = await productsRes.json();
+
+  if (productsData.success && Array.isArray(productsData.data)) {
+    setProductCodesUsed(productsData.data.length);
+  } else {
+    setProductCodesUsed(0);
+  }
+} catch (error) {
+  console.error('Failed to fetch products:', error);
+  setProductCodesUsed(0);
+}
     try {
       const res2 = await fetch('/api/changes', { cache: 'no-store' });
       if (res2.ok) {
@@ -111,22 +163,27 @@ useEffect(() => {
 
         <div style={s.statsRow}>
           {[
-            { label: 'Labeler Code', value: '70095', sub: 'Sun Pharma', href: null },
-            {
-              label: 'Product Codes Used',
-              value: `${stats.totalNDC} / 999`,
-              sub: 'Sequential codes assigned',
-              href: '/registry',
-            },
+          {
+  label: 'Labeler Code',
+  value: systemConfig?.labelerCode || '—',
+  sub: 'Sun Pharma',
+  href: null
+},
+{
+  label: 'Product Codes Used',
+ value: `${productCodesUsed} / ${systemConfig?.maxProductCode || '—'}`,
+  sub: 'Sequential codes assigned',
+  href: null
+},
             { label: 'Total NDCs', value: stats.totalNDC, sub: 'Generated', href: '/registry' },
 
             {
-              label: 'Active',
-              value: stats.activeNDC,
-              sub: 'Currently active',
-              color: '#2D6A4F',
-              href: '/registry',
-            },
+  label: 'Active',
+  value: stats.activeNDC,
+  sub: 'Currently active',
+  color: '#2D6A4F',
+  href: '/registry?status=active',
+},
 
             {
               label: 'Products',
@@ -164,13 +221,15 @@ useEffect(() => {
           ))}
         </div>
         {/* exhausion.. */}
-        {stats.totalNDC >= 900 && (
-          <div style={s.warning}>
-            ⚠️ <strong>Warning:</strong> Product codes nearing limit —
-            {999 - stats.totalNDC} codes remaining under labeler 70095. Contact
-            FDA for new labeler code.
-          </div>
-        )}
+       {systemConfig?.maxProductCode &&
+  productCodesUsed >=
+    systemConfig.maxProductCode * 0.9 && (
+    <div style={s.warning}>
+      ⚠️ <strong>Warning:</strong> Product codes nearing limit —
+      {systemConfig.maxProductCode - productCodesUsed} codes
+      remaining under labeler {systemConfig.labelerCode}.
+    </div>
+  )}
 
         <div style={s.grid}>
           <div style={s.card}>

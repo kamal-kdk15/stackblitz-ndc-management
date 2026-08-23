@@ -1,12 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Layout from '../components/layout.jsx';
 import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
 
 
 export default function RegistryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
   const [registry, setRegistry] = useState([]);
   const [search, setSearch] = useState('');
@@ -20,19 +21,33 @@ export default function RegistryPage() {
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          setUser(data.user);
-          fetchRegistry();
-        } else {
-          router.push('/');
-        }
-      })
-      .catch(() => router.push('/'));
-  }, []);
+ useEffect(() => {
+  const urlStatus = searchParams.get('status');
+
+  if (urlStatus) {
+    setStatus(
+      urlStatus.toLowerCase() === 'active'
+        ? 'Active'
+        : urlStatus
+    );
+  }
+
+  fetch('/api/me')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.user) {
+        setUser(data.user);
+      } else {
+        router.push('/');
+      }
+    })
+    .catch(() => router.push('/'));
+}, [searchParams, router]);
+useEffect(() => {
+  if (user) {
+    fetchRegistry();
+  }
+}, [user, status]);
 
   function buildQuery() {
     const params = new URLSearchParams();
