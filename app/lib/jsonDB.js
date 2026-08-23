@@ -160,20 +160,62 @@ export async function writeData(fileName, data) {
 
 if (fileName === 'users.json') {
 
-      if (item._loginStatus) {
+  if (item._loginStatus) {
 
-        const result = await pool.query(`
-          UPDATE users
-          SET is_logged_in = $1
-          WHERE id = $2
-          RETURNING *
-        `, [
-          item.is_logged_in,
-          item.id
-        ]);
+    const result = await pool.query(`
+      UPDATE users
+      SET is_logged_in = $1
+      WHERE id = $2
+      RETURNING *
+    `, [
+      item.is_logged_in,
+      item.id
+    ]);
 
-        return result.rows[0];
-      }
+    return result.rows[0];
+  }
+
+
+  if (item._delete) {
+    await pool.query(`DELETE FROM users WHERE id = $1`, [item.id]);
+    return { deleted: true };
+  }
+
+  if (item._update) {
+    const result = await pool.query(`
+      UPDATE users
+      SET name = COALESCE($1, name),
+          email = COALESCE($2, email),
+          role = COALESCE($3, role),
+          is_active = COALESCE($4, is_active)
+      WHERE id = $5
+      RETURNING id, name, email, role, is_active
+    `, [
+      item.name ?? null,
+      item.email ?? null,
+      item.role ?? null,
+      item.is_active ?? null,
+      item.id
+    ]);
+
+    return result.rows[0];
+  }
+
+  // CREATE USER 
+  const result = await pool.query(`
+    INSERT INTO users
+    (name, email, password, role, is_active)
+    VALUES ($1,$2,$3,$4,$5)
+    RETURNING id, name, email, role, is_active
+  `, [
+    item.name,
+    item.email,
+    item.password,
+    item.role,
+    item.is_active ?? true
+  ]);
+
+  return result.rows[0];
 
     
 } else if (fileName === 'ndc.json') {

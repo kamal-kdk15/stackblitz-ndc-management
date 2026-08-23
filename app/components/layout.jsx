@@ -11,10 +11,17 @@ const navItems = [
   { href: '/audit', icon: '◎', label: 'Audit Trail' },
 ];
 
+
+
 export default function Layout({ children, current }) {
   const [user, setUser] = useState(null);
   const [hovered, setHovered] = useState(null);
   const router = useRouter();
+
+  const allNavItems = [
+  ...navItems,
+  ...(user?.role === 'Admin' ? [{ href: '/admin/users', icon: '⚙', label: 'User Management' }] : [])
+];
 
   useEffect(() => {
   fetch('/api/me')
@@ -68,7 +75,7 @@ const handleLogout = async () => {
         {/* nav... */}
         <nav style={s.nav}>
           <div style={s.navLabel}>MAIN MENU</div>
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const isActive = current === item.href;
             const isHovered = hovered === item.href;
             return (
