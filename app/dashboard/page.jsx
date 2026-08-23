@@ -254,20 +254,24 @@ setStats({
                 </button>
               </div>
             ) : (
-              recent.map((r, i) => (
-                <div key={i} style={s.row}>
-                  <div style={s.rowLeft}>
-                    <div style={s.rowIcon}>💊</div>
-                    <div>
-                      <div style={s.rowName}>{r.product_name}</div>
-                      <div style={s.rowMeta}>
-                        {r.strength} · {r.dosage_form} · {r.rx_otc}
-                      </div>
-                    </div>
-                  </div>
-                  <span style={s.ndcTag}>{r.ndc_code}</span>
-                </div>
-              ))
+             recent.map((r, i) => (
+  <div
+    key={i}
+    style={{ ...s.row, cursor: 'pointer' }}
+    onClick={() => router.push(`/registry/${r.ndc_code}`)} 
+  >
+    <div style={s.rowLeft}>
+      <div style={s.rowIcon}>💊</div>
+      <div>
+        <div style={s.rowName}>{r.product_name}</div>
+        <div style={s.rowMeta}>
+          {r.strength} · {r.dosage_form} · {r.rx_otc}
+        </div>
+      </div>
+    </div>
+    <span style={s.ndcTag}>{r.ndc_code}</span>
+  </div>
+))
             )}
           </div>
 

@@ -251,11 +251,17 @@ useEffect(() => {
                   </thead>
                   <tbody>
                     {registry.map((r, i) => (
-                      <tr key={r.id} style={i % 2 === 0 ? s.trEven : s.trOdd}>
-                        <td style={{ ...s.td, color: '#94A3B8', fontSize: '12px' }}>{i + 1}</td>
-                        <td style={s.td}>
-                          <span style={s.ndcCode}>{r.ndc_code}</span>
-                        </td>
+  <tr
+    key={r.id}
+    style={{ ...(i % 2 === 0 ? s.trEven : s.trOdd), cursor: 'pointer' }}
+    onClick={() => router.push(`/registry/${r.ndc_code}`)}  
+  >
+    <td style={{ ...s.td, color: '#94A3B8', fontSize: '12px' }}>{i + 1}</td>
+    <td style={s.td}>
+      <span style={s.ndcCode}>{r.ndc_code}</span> 
+    </td>
+    <td style={{ ...s.td, fontWeight: '600', color: '#1C2B2B' }}>{r.product_name}</td>
+
                         <td style={{ ...s.td, fontWeight: '600', color: '#1C2B2B' }}>{r.product_name}</td>
                         <td style={s.td}>{r.strength}</td>
                         <td style={s.td}>{r.dosage_form}</td>
