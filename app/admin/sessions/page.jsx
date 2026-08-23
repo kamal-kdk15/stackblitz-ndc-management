@@ -120,7 +120,7 @@ export default function AdminSessionsPage() {
         <div style={s.pageHead}>
           <div>
             <h1 style={s.pageTitle}>Active Sessions</h1>
-            <p style={s.pageSub}>See who's signed in and force sign-out when needed — Sun Pharma Industries Ltd.</p>
+            <p style={s.pageSub}>See who is signed in and force sign-out when needed — Sun Pharma Industries Ltd.</p>
           </div>
         </div>
 
