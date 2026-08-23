@@ -20,9 +20,12 @@ export default function Layout({ children, current }) {
 
   const allNavItems = [
   ...navItems,
-  ...(user?.role === 'Admin' ? [{ href: '/admin/users', icon: '⚙', label: 'User Management' }] : [])
+  ...(user?.role === 'Admin' ? [
+    { href: '/admin/users', icon: '♙', label: 'User Management' },
+   { href: '/admin/sessions', icon: '⚿', label: 'Active Sessions' },   
+   { href: '/admin/config', icon: '⚙', label: 'System Config'}
+  ] : [])
 ];
-
   useEffect(() => {
   fetch('/api/me')
     .then((res) => res.json())

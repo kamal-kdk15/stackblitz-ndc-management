@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
 import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
+import IconActionButton from '../components/IconActionButton.jsx';
 
 export default function PackagesPage() {
   const router = useRouter();
@@ -331,13 +332,6 @@ export default function PackagesPage() {
                       {user?.role !== 'Viewer' && (
                         <>
                           <button
-                            onClick={() => handleEdit(pkg)}
-                            style={s.editBtn}
-                          >
-                            Edit
-                          </button>
-
-                          <button
                             onClick={() =>
                               handleStatusToggle(pkg.id, pkg.status)
                             }
@@ -357,6 +351,8 @@ export default function PackagesPage() {
                               ? 'Deactivate'
                               : 'Reactivate'}
                           </button>
+                          <IconActionButton icon="✎" label="Edit" onClick={() => handleEdit(pkg)} />
+
                         </>
                       )}
                     </div>

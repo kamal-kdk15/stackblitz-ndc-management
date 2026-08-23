@@ -31,7 +31,7 @@ async function writeFallbackData(fileName, data) {
   }
 }
 
-export async function readData(fileName) {
+export async function readData(fileName, filters = {}) {
   try {
    if (fileName === 'users.json') {
   const result = await pool.query('SELECT * FROM users');
@@ -46,40 +46,79 @@ export async function readData(fileName) {
     isLoggedIn: r.is_logged_in ?? false,
   }));
 
-    } else if (fileName === 'ndc.json') {
-      const result = await pool.query(
-        'SELECT * FROM ndc_registry ORDER BY id DESC'
-      );
-      return result.rows.map(r => ({
-        id: r.id,
-        ndc_code: r.ndc_code,
-        product_name: r.product_name,
-        strength: r.strength,
-        dosage_form: r.dosage_form,
-        rx_otc: r.rx_otc,
-        anda_number: r.anda_number,
-        distributor: r.distributor,
-        labeler_code: r.labeler_code,
-        status: r.status,
-        created_by: r.created_by,
-        created_at: r.created_at
-      }));
+    } else if (fileName === 'config.json') {
+  const result = await pool.query('SELECT * FROM system_config LIMIT 1');
+  return result.rows.map(r => ({
+    id: r.id,
+    labelerCode: r.labeler_code,
+    maxProductCode: r.max_product_code,
+    updatedBy: r.updated_by,
+    updatedAt: r.updated_at
+  }));
+}
+     else if (fileName === 'ndc.json') {
+  let query = 'SELECT * FROM ndc_registry WHERE 1=1';
+  const params = [];
+  let i = 1;
 
-    } else if (fileName === 'audit.json') {
-      const result = await pool.query(
-        'SELECT * FROM audit_log ORDER BY id DESC'
-      );
-      return result.rows.map(r => ({
-        id: r.id,
-        action: r.action,
-        performedBy: r.performed_by,
-        recordId: r.record_id,
-        oldValue: r.old_value,
-        newValue: r.new_value,
-        timestamp: r.timestamp
-      }));
+  if (filters.search) {
+    query += ` AND (ndc_code ILIKE $${i} OR product_name ILIKE $${i} OR anda_number ILIKE $${i})`;
+    params.push(`%${filters.search}%`);
+    i++;
+  }
+  if (filters.status) { query += ` AND status = $${i++}`; params.push(filters.status); }
+  if (filters.rx_otc) { query += ` AND rx_otc = $${i++}`; params.push(filters.rx_otc); }
+  if (filters.dosage_form) { query += ` AND dosage_form ILIKE $${i++}`; params.push(`%${filters.dosage_form}%`); }
+  if (filters.created_by) { query += ` AND created_by ILIKE $${i++}`; params.push(`%${filters.created_by}%`); }
+  if (filters.dateFrom) { query += ` AND created_at >= $${i++}`; params.push(filters.dateFrom); }
+  if (filters.dateTo) { query += ` AND created_at <= $${i++}`; params.push(filters.dateTo); }
 
-    } else if (fileName === 'changes.json') {
+  query += ' ORDER BY id DESC';
+
+  const result = await pool.query(query, params);
+  return result.rows.map(r => ({
+    id: r.id,
+    ndc_code: r.ndc_code,
+    product_name: r.product_name,
+    strength: r.strength,
+    dosage_form: r.dosage_form,
+    rx_otc: r.rx_otc,
+    anda_number: r.anda_number,
+    distributor: r.distributor,
+    labeler_code: r.labeler_code,
+    status: r.status,
+    created_by: r.created_by,
+    created_at: r.created_at
+  }));
+} 
+ else if (fileName === 'audit.json') {
+  let query = 'SELECT * FROM audit_log WHERE 1=1';
+  const params = [];
+  let i = 1;
+
+  if (filters.search) {
+    query += ` AND (performed_by ILIKE $${i} OR record_id ILIKE $${i} OR action ILIKE $${i})`;
+    params.push(`%${filters.search}%`);
+    i++;
+  }
+  if (filters.action) { query += ` AND action = $${i++}`; params.push(filters.action); }
+  if (filters.dateFrom) { query += ` AND timestamp >= $${i++}`; params.push(filters.dateFrom); }
+  if (filters.dateTo) { query += ` AND timestamp <= $${i++}`; params.push(filters.dateTo); }
+
+  query += ' ORDER BY id DESC';
+
+  const result = await pool.query(query, params);
+  return result.rows.map(r => ({
+    id: r.id,
+    action: r.action,
+    performedBy: r.performed_by,
+    recordId: r.record_id,
+    oldValue: r.old_value,
+    newValue: r.new_value,
+    timestamp: r.timestamp
+  }));
+} 
+else if (fileName === 'changes.json') {
       const result = await pool.query(
         'SELECT * FROM change_requests ORDER BY id DESC'
       );
@@ -218,6 +257,25 @@ if (fileName === 'users.json') {
   return result.rows[0];
 
     
+} else if (fileName === 'config.json') {
+
+  const result = await pool.query(`
+    UPDATE system_config
+    SET labeler_code = COALESCE($1, labeler_code),
+        max_product_code = COALESCE($2, max_product_code),
+        updated_by = $3,
+        updated_at = NOW()
+    WHERE id = $4
+    RETURNING *
+  `, [
+    item.labeler_code ?? null,
+    item.max_product_code ?? null,
+    item.updated_by,
+    item.id
+  ]);
+
+  return result.rows[0];
+
 } else if (fileName === 'ndc.json') {
 
   // BULK STATUS UPDATE FOR ALL NDCs OF A PRODUCT

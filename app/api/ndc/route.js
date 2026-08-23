@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
-    const type = request.nextUrl.searchParams.get('type');
+    const sp = request.nextUrl.searchParams;
+    const type = sp.get('type');
 
     if (type === 'pending') {
       const pendingRequests = await readData('ndc_requests.json');
@@ -17,7 +18,17 @@ export async function GET(request) {
       });
     }
 
-    const data = await readData('ndc.json');
+    const filters = {
+      search: sp.get('search') || undefined,
+      status: sp.get('status') || undefined,
+      rx_otc: sp.get('rx_otc') || undefined,
+      dosage_form: sp.get('dosage_form') || undefined,
+      created_by: sp.get('created_by') || undefined,
+      dateFrom: sp.get('dateFrom') || undefined,
+      dateTo: sp.get('dateTo') || undefined,
+    };
+
+    const data = await readData('ndc.json', filters);
 
     return NextResponse.json({
       success: true,

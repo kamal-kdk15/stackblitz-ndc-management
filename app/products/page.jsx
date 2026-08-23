@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../components/layout.jsx';
 import CreateNDCWizard from '../components/CreateNDCWizard.jsx';
+import IconActionButton from '../components/IconActionButton.jsx';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -255,13 +256,6 @@ export default function ProductsPage() {
                     {user?.role !== 'Viewer' && (
                       <>
                         <button
-                          onClick={() => handleEdit(product)}
-                          style={s.editBtn}
-                        >
-                          Edit
-                        </button>
-
-                        <button
                           onClick={() =>
                             handleStatusToggle(product.id, product.status)
                           }
@@ -281,6 +275,8 @@ export default function ProductsPage() {
                             ? 'Deactivate'
                             : 'Reactivate'}
                         </button>
+                       <IconActionButton icon="✎" label="Edit" onClick={() => handleEdit(product)} />
+
                       </>
                     )}
                   </div>

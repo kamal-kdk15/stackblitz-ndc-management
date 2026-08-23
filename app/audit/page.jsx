@@ -10,19 +10,38 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterAction, setFilterAction] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) router.push('/');
-    else {
-      setUser(JSON.parse(stored));
-      fetchAudit();
-    }
+    fetch('/api/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.user) {
+          setUser(data.user);
+          fetchAudit();
+        } else {
+          router.push('/');
+        }
+      })
+      .catch(() => router.push('/'));
   }, []);
 
+  function buildQuery() {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (filterAction) params.set('action', filterAction);
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    return params.toString();
+  }
+
   async function fetchAudit() {
+    setLoading(true);
     try {
-      const res = await fetch('/api/audit', { cache: 'no-store' });
+      const qs = buildQuery();
+      const res = await fetch(`/api/audit${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success) setLogs(data.data);
     } catch (e) {
@@ -31,14 +50,18 @@ export default function AuditPage() {
     setLoading(false);
   }
 
-  const filtered = logs.filter((l) => {
-    const matchSearch =
-      l.performedBy?.toLowerCase().includes(search.toLowerCase()) ||
-      l.recordId?.toLowerCase().includes(search.toLowerCase()) ||
-      l.action?.toLowerCase().includes(search.toLowerCase());
-    const matchAction = filterAction ? l.action === filterAction : true;
-    return matchSearch && matchAction;
-  });
+  function handleClearFilters() {
+    setSearch('');
+    setFilterAction('');
+    setDateFrom('');
+    setDateTo('');
+    setTimeout(fetchAudit, 0);
+  }
+
+  function handleExport() {
+    const qs = buildQuery();
+    window.open(`/api/audit/export${qs ? `?${qs}` : ''}`, '_blank');
+  }
 
   const actionColors = {
     LOGIN: { bg: '#F0F7F4', color: '#2D6A4F' },
@@ -49,7 +72,16 @@ export default function AuditPage() {
     CHANGE_REVIEWED: { bg: '#F0F4FF', color: '#3730A3' },
   };
 
-  const uniqueActions = [...new Set(logs.map((l) => l.action))];
+  // Static list so the dropdown doesn't shift as the visible/filtered log set changes
+  const knownActions = [
+    'LOGIN', 'LOGOUT', 'NDC_CREATED', 'NDC_ACTIVATED', 'NDC_DEACTIVATED',
+    'PRODUCT_CREATED', 'PRODUCT_UPDATED', 'PRODUCT_STATUS_CHANGED',
+    'PACKAGE_CREATED', 'PACKAGE_UPDATED', 'PACKAGES_AUTO_DEACTIVATED',
+    'NDCS_AUTO_DEACTIVATED', 'USER_CREATED', 'USER_UPDATED', 'USER_DELETED',
+    'SESSION_REVOKED', 'ALL_SESSIONS_REVOKED', 'SYSTEM_CONFIG_UPDATED',
+  ];
+
+  const activeFilterCount = [filterAction, dateFrom, dateTo].filter(Boolean).length;
 
   if (!user) return null;
 
@@ -63,12 +95,16 @@ export default function AuditPage() {
               Complete log of all system actions — 21 CFR Part 11 compliant.
             </p>
           </div>
-          <button style={s.refreshBtn} onClick={fetchAudit}>
-            ↻ Refresh
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button style={s.exportBtn} onClick={handleExport}>
+              ⇩ Export
+            </button>
+            <button style={s.refreshBtn} onClick={fetchAudit}>
+              ↻ Refresh
+            </button>
+          </div>
         </div>
 
-        {/* stats... */}
         <div style={s.statsRow}>
           <div style={s.statCard}>
             <div style={s.statNum}>{logs.length}</div>
@@ -97,10 +133,9 @@ export default function AuditPage() {
         <div style={s.card}>
           <div style={s.cardHead}>
             <span style={s.cardTitle}>System Activity Log</span>
-            <span style={s.countBadge}>{filtered.length} entries</span>
+            <span style={s.countBadge}>{logs.length} entries</span>
           </div>
 
-          {/* filters.. */}
           <div style={s.filterRow}>
             <div style={s.searchWrap}>
               <input
@@ -108,43 +143,62 @@ export default function AuditPage() {
                 placeholder="Search by user, action, record ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchAudit()}
               />
             </div>
-            <select
-              style={s.filterSelect}
-              value={filterAction}
-              onChange={(e) => setFilterAction(e.target.value)}
+            <button
+              style={{ ...s.filterToggleBtn, ...(showFilters ? s.filterToggleBtnActive : {}) }}
+              onClick={() => setShowFilters(!showFilters)}
             >
-              <option value="">All Actions</option>
-              {uniqueActions.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-            {(search || filterAction) && (
-              <button
-                style={s.clearBtn}
-                onClick={() => {
-                  setSearch('');
-                  setFilterAction('');
-                }}
-              >
+              ▤ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </button>
+            <button style={s.applyBtn} onClick={fetchAudit}>
+              Search
+            </button>
+            {(search || activeFilterCount > 0) && (
+              <button style={s.clearBtn} onClick={handleClearFilters}>
                 Clear
               </button>
             )}
           </div>
 
+          {showFilters && (
+            <div style={s.advancedFilterRow}>
+              <div style={s.filterField}>
+                <label style={s.filterLabel}>Action</label>
+                <select style={s.filterInput} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
+                  <option value="">All Actions</option>
+                  {knownActions.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={s.filterField}>
+                <label style={s.filterLabel}>From Date</label>
+                <input type="date" style={s.filterInput} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              </div>
+              <div style={s.filterField}>
+                <label style={s.filterLabel}>To Date</label>
+                <input type="date" style={s.filterInput} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              </div>
+              <button style={s.applyBtn} onClick={fetchAudit}>
+                Apply
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div style={s.empty}>
               <div style={s.emptyText}>Loading...</div>
             </div>
-          ) : filtered.length === 0 ? (
+          ) : logs.length === 0 ? (
             <div style={s.empty}>
               <div style={s.emptyIcon}>◎</div>
-              <div style={s.emptyTitle}>No audit logs yet</div>
+              <div style={s.emptyTitle}>No audit logs found</div>
               <div style={s.emptySub}>
-                Actions will appear here as users interact with the system
+                {search || activeFilterCount > 0
+                  ? 'Try adjusting your search or filters'
+                  : 'Actions will appear here as users interact with the system'}
               </div>
             </div>
           ) : (
@@ -162,32 +216,17 @@ export default function AuditPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((l, i) => {
-                    const color = actionColors[l.action] || {
-                      bg: '#F5F3EF',
-                      color: '#666',
-                    };
+                  {logs.map((l, i) => {
+                    const color = actionColors[l.action] || { bg: '#F5F3EF', color: '#666' };
                     return (
                       <tr key={i} style={i % 2 === 0 ? s.trEven : s.trOdd}>
-                        <td
-                          style={{ ...s.td, color: '#AAA', fontSize: '12px' }}
-                        >
-                          {i + 1}
-                        </td>
+                        <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>{i + 1}</td>
                         <td style={s.td}>
-                          <span
-                            style={{
-                              ...s.actionBadge,
-                              background: color.bg,
-                              color: color.color,
-                            }}
-                          >
+                          <span style={{ ...s.actionBadge, background: color.bg, color: color.color }}>
                             {l.action}
                           </span>
                         </td>
-                        <td style={{ ...s.td, fontWeight: '600' }}>
-                          {l.performedBy}
-                        </td>
+                        <td style={{ ...s.td, fontWeight: '600' }}>{l.performedBy}</td>
                         <td style={s.td}>
                           {l.recordId && l.recordId !== '-' ? (
                             <span style={s.recordTag}>{l.recordId}</span>
@@ -195,24 +234,13 @@ export default function AuditPage() {
                             <span style={{ color: '#CCC' }}>—</span>
                           )}
                         </td>
-                        <td
-                          style={{ ...s.td, color: '#AAA', fontSize: '12px' }}
-                        >
+                        <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>
                           {l.oldValue && l.oldValue !== '-' ? l.oldValue : '—'}
                         </td>
-                        <td
-                          style={{ ...s.td, color: '#666', fontSize: '12px' }}
-                        >
+                        <td style={{ ...s.td, color: '#666', fontSize: '12px' }}>
                           {l.newValue && l.newValue !== '-' ? l.newValue : '—'}
                         </td>
-                        <td
-                          style={{
-                            ...s.td,
-                            color: '#AAA',
-                            fontSize: '12px',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
+                        <td style={{ ...s.td, color: '#AAA', fontSize: '12px', whiteSpace: 'nowrap' }}>
                           {l.timestamp}
                         </td>
                       </tr>
@@ -229,190 +257,42 @@ export default function AuditPage() {
 }
 
 const s = {
-  page: {
-    padding: '32px',
-  },
-  pageHead: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: '24px',
-    paddingBottom: '20px',
-    borderBottom: '1px solid #EDE8E0',
-  },
-  pageTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: '3px',
-  },
-  pageSub: {
-    fontSize: '13px',
-    color: '#999',
-  },
-  refreshBtn: {
-    padding: '9px 16px',
-    background: 'white',
-    color: '#666',
-    border: '1.5px solid #EDE8E0',
-    borderRadius: '7px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontWeight: '500',
-  },
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '12px',
-    marginBottom: '20px',
-  },
-  statCard: {
-    background: 'white',
-    borderRadius: '10px',
-    padding: '16px 18px',
-    border: '1px solid #EDE8E0',
-  },
-  statNum: {
-    fontSize: '24px',
-    fontWeight: '800',
-    color: '#1A1A1A',
-    lineHeight: '1',
-    marginBottom: '5px',
-  },
-  statLabel: {
-    fontSize: '12px',
-    color: '#AAA',
-    fontWeight: '500',
-  },
-  card: {
-    background: 'white',
-    borderRadius: '12px',
-    border: '1px solid #EDE8E0',
-    overflow: 'hidden',
-  },
-  cardHead: {
-    padding: '14px 20px',
-    borderBottom: '1px solid #EDE8E0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardTitle: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  countBadge: {
-    fontSize: '12px',
-    color: '#AAA',
-  },
-  filterRow: {
-    padding: '12px 20px',
-    borderBottom: '1px solid #EDE8E0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  searchWrap: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: '#FAF8F5',
-    border: '1.5px solid #EDE8E0',
-    borderRadius: '8px',
-    padding: '0 12px',
-  },
-  searchInput: {
-    flex: 1,
-    padding: '8px 0',
-    border: 'none',
-    background: 'transparent',
-    fontSize: '13px',
-    outline: 'none',
-    color: '#1A1A1A',
-  },
-  filterSelect: {
-    padding: '8px 12px',
-    border: '1.5px solid #EDE8E0',
-    borderRadius: '7px',
-    fontSize: '13px',
-    background: '#FAF8F5',
-    outline: 'none',
-    color: '#1A1A1A',
-    cursor: 'pointer',
-  },
-  clearBtn: {
-    padding: '8px 14px',
-    background: 'white',
-    border: '1.5px solid #EDE8E0',
-    borderRadius: '7px',
-    fontSize: '13px',
-    color: '#999',
-    cursor: 'pointer',
-  },
+  page: { padding: '32px' },
+  pageHead: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #EDE8E0' },
+  pageTitle: { fontSize: '20px', fontWeight: '700', color: '#1A1A1A', marginBottom: '3px' },
+  pageSub: { fontSize: '13px', color: '#999' },
+  refreshBtn: { padding: '9px 16px', background: 'white', color: '#666', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' },
+  exportBtn: { padding: '9px 16px', background: 'white', color: '#444', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' },
+  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' },
+  statCard: { background: 'white', borderRadius: '10px', padding: '16px 18px', border: '1px solid #EDE8E0' },
+  statNum: { fontSize: '24px', fontWeight: '800', color: '#1A1A1A', lineHeight: '1', marginBottom: '5px' },
+  statLabel: { fontSize: '12px', color: '#AAA', fontWeight: '500' },
+  card: { background: 'white', borderRadius: '12px', border: '1px solid #EDE8E0', overflow: 'hidden' },
+  cardHead: { padding: '14px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  cardTitle: { fontSize: '13px', fontWeight: '600', color: '#1A1A1A' },
+  countBadge: { fontSize: '12px', color: '#AAA' },
+  filterRow: { padding: '12px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
+  searchWrap: { flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px', background: '#FAF8F5', border: '1.5px solid #EDE8E0', borderRadius: '8px', padding: '0 12px' },
+  searchInput: { flex: 1, padding: '8px 0', border: 'none', background: 'transparent', fontSize: '13px', outline: 'none', color: '#1A1A1A' },
+  filterToggleBtn: { padding: '8px 14px', background: 'white', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', color: '#666', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap' },
+  filterToggleBtnActive: { background: '#FFF0E6', borderColor: '#F0997B', color: '#C4520A' },
+  applyBtn: { padding: '8px 16px', background: '#1A1A1A', color: 'white', border: 'none', borderRadius: '7px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' },
+  clearBtn: { padding: '8px 14px', background: 'white', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', color: '#999', cursor: 'pointer' },
+  advancedFilterRow: { padding: '12px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'flex-end', background: '#FDFCFA' },
+  filterField: { display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' },
+  filterLabel: { fontSize: '11px', fontWeight: '600', color: '#999' },
+  filterInput: { padding: '8px 10px', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', outline: 'none', color: '#1A1A1A', background: 'white' },
   tableWrap: { overflowX: 'auto' },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-  },
-  thead: {
-    background: '#FAF8F5',
-    borderBottom: '1px solid #EDE8E0',
-  },
-  th: {
-    padding: '11px 16px',
-    textAlign: 'left',
-    fontSize: '11px',
-    fontWeight: '700',
-    color: '#AAA',
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase',
-    whiteSpace: 'nowrap',
-  },
-  td: {
-    padding: '11px 16px',
-    borderBottom: '1px solid #F5F2ED',
-    color: '#1A1A1A',
-    fontSize: '13px',
-  },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
+  thead: { background: '#FAF8F5', borderBottom: '1px solid #EDE8E0' },
+  th: { padding: '11px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#AAA', letterSpacing: '0.5px', textTransform: 'uppercase', whiteSpace: 'nowrap' },
+  td: { padding: '11px 16px', borderBottom: '1px solid #F5F2ED', color: '#1A1A1A', fontSize: '13px' },
   trEven: { background: 'white' },
   trOdd: { background: '#FDFCFA' },
-  actionBadge: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: '700',
-    whiteSpace: 'nowrap',
-  },
-  recordTag: {
-    fontFamily: 'Consolas, monospace',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#C4520A',
-    background: '#FFF0E6',
-    padding: '2px 8px',
-    borderRadius: '4px',
-  },
-  empty: {
-    padding: '48px 24px',
-    textAlign: 'center',
-  },
-  emptyIcon: {
-    fontSize: '28px',
-    marginBottom: '10px',
-    color: '#DDD',
-  },
-  emptyTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: '5px',
-  },
-  emptySub: {
-    fontSize: '12px',
-    color: '#AAA',
-  },
+  actionBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' },
+  recordTag: { fontFamily: 'Consolas, monospace', fontSize: '12px', fontWeight: '600', color: '#C4520A', background: '#FFF0E6', padding: '2px 8px', borderRadius: '4px' },
+  empty: { padding: '48px 24px', textAlign: 'center' },
+  emptyIcon: { fontSize: '28px', marginBottom: '10px', color: '#DDD' },
+  emptyTitle: { fontSize: '14px', fontWeight: '600', color: '#1A1A1A', marginBottom: '5px' },
+  emptySub: { fontSize: '12px', color: '#AAA' },
 };

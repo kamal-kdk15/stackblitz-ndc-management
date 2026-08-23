@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../../components/layout.jsx';
+import IconActionButton from '../../components/IconActionButton.jsx';
+
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -203,9 +205,6 @@ export default function AdminUsersPage() {
                   <span style={u.isActive ? s.badgeActive : s.badgeInactive}>
   {u.isActive ? 'Active' : 'Inactive'}
 </span>
-                    <button style={s.editBtn} onClick={() => setEditingUser({ ...u })}>
-                      Edit
-                    </button>
                   <button
   style={{
     ...s.toggleBtn,
@@ -217,13 +216,14 @@ export default function AdminUsersPage() {
 >
   {u.isActive ? 'Deactivate' : 'Reactivate'}
 </button>
-                    <button
-                      style={s.deleteBtn}
-                      onClick={() => handleDelete(u)}
-                      disabled={String(u.id) === String(currentUser.id)}
-                    >
-                      Delete
-                    </button>
+                   <IconActionButton icon="✎" label="Edit" onClick={() => setEditingUser({ ...u })} />
+                   <IconActionButton
+  icon="🗑"
+  label="Delete"
+  color="#991B1B"
+  onClick={() => handleDelete(u)}
+  disabled={String(u.id) === String(currentUser.id)}
+/>
                   </div>
                 </div>
               ))}
