@@ -79,7 +79,7 @@ export async function POST(request) {
       is_active: true
     });
 
-    await logAudit('USER_CREATED', admin.name, email, '-', role);
+await logAudit('USER_CREATED', admin.name, email, '-', JSON.stringify({ name, email, role }));
 
     return NextResponse.json({
       success: true,
@@ -96,7 +96,6 @@ export async function POST(request) {
   }
 }
 
-// UPDATE user (name, email, role, active status)
 export async function PATCH(request) {
   const admin = await requireAdmin();
   if (!admin) {
@@ -123,7 +122,6 @@ export async function PATCH(request) {
       );
     }
 
-    // Prevent an admin from locking themselves out
     if (String(id) === String(admin.id) && is_active === false) {
       return NextResponse.json(
         { success: false, message: 'You cannot deactivate your own account' },
@@ -135,6 +133,17 @@ export async function PATCH(request) {
       return NextResponse.json(
         { success: false, message: 'You cannot change your own role' },
         { status: 400 }
+      );
+    }
+
+    // Fetch the existing record so the audit log captures real before/after values
+    const users = await readData('users.json');
+    const existingUser = users.find((u) => String(u.id) === String(id));
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -151,8 +160,18 @@ export async function PATCH(request) {
       'USER_UPDATED',
       admin.name,
       String(id),
-      '-',
-      JSON.stringify({ name, email, role, is_active })
+      JSON.stringify({
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        is_active: existingUser.isActive
+      }),
+      JSON.stringify({
+        name: name ?? existingUser.name,
+        email: email ?? existingUser.email,
+        role: role ?? existingUser.role,
+        is_active: is_active ?? existingUser.isActive
+      })
     );
 
     return NextResponse.json({
@@ -197,9 +216,29 @@ export async function DELETE(request) {
       );
     }
 
+    const users = await readData('users.json');
+    const existingUser = users.find((u) => String(u.id) === String(id));
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, message: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     await writeData('users.json', { _delete: true, id });
 
-    await logAudit('USER_DELETED', admin.name, String(id), '-', '-');
+    await logAudit(
+      'USER_DELETED',
+      admin.name,
+      String(id),
+      JSON.stringify({
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role
+      }),
+      'Deleted'
+    );
 
     return NextResponse.json({
       success: true,

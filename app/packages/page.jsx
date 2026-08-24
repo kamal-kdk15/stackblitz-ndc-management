@@ -210,10 +210,12 @@ export default function PackagesPage() {
             <div style={s.empty}>
               <div style={s.emptyIcon}>📦</div>
               <div style={s.emptyText}>No products found</div>
-              <div style={s.emptySub}>Create your first product in the NDC wizard on Dashboard</div>
-              <button style={{ ...s.primaryBtn, marginTop: '16px' }} onClick={() => router.push('/dashboard')}>
-                Go to Dashboard
-              </button>
+              <div style={s.emptySub}>Create your first product in the NDC</div>
+             {user?.role !== 'Viewer' && (
+            <button style={s.primaryBtn} onClick={() => setShowWizard(true)}>
+              + Create NDC
+            </button>
+          )}
             </div>
           </div>
         ) : (
@@ -305,7 +307,11 @@ export default function PackagesPage() {
             ) : (
               <div>
                 {filteredPackages.map((pkg, i) => (
-                  <div key={pkg.id} style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
+                <div
+  key={pkg.id}
+  style={{ ...(i % 2 === 0 ? s.rowEven : s.rowOdd), cursor: 'pointer' }}
+  onClick={() => router.push(`/packages/${pkg.id}`)}
+>
                     <div style={s.rowLeft}>
                       <div style={s.rowIcon}>📦</div>
                       <div>
@@ -332,9 +338,10 @@ export default function PackagesPage() {
                       {user?.role !== 'Viewer' && (
                         <>
                           <button
-                            onClick={() =>
-                              handleStatusToggle(pkg.id, pkg.status)
-                            }
+  onClick={(e) => {
+    e.stopPropagation();
+    handleStatusToggle(pkg.id, pkg.status);
+  }}
                             style={{
                               ...s.toggleBtn,
                               color:
@@ -351,8 +358,14 @@ export default function PackagesPage() {
                               ? 'Deactivate'
                               : 'Reactivate'}
                           </button>
-                          <IconActionButton icon="✎" label="Edit" onClick={() => handleEdit(pkg)} />
-
+                          <IconActionButton
+  icon="✎"
+  label="Edit"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleEdit(pkg);
+  }}
+/>
                         </>
                       )}
                     </div>

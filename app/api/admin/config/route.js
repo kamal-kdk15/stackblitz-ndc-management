@@ -54,31 +54,38 @@ export async function PATCH(request) {
       );
     }
 
-    const existing = await readData('config.json');
-    const configId = existing[0]?.id;
+  const existing = await readData('config.json');
+const configId = existing[0]?.id;
 
-    if (!configId) {
-      return NextResponse.json(
-        { success: false, message: 'System config not initialized' },
-        { status: 404 }
-      );
-    }
+if (!configId) {
+  return NextResponse.json(
+    { success: false, message: 'System config not initialized' },
+    { status: 404 }
+  );
+}
 
-    const updated = await writeData('config.json', {
-      id: configId,
-      labeler_code,
-      max_product_code,
-      updated_by: user.name
-    });
+const oldSnapshot = {                              // 👈 YE LINE MISSING THI
+  labeler_code: existing[0].labelerCode,
+  max_product_code: existing[0].maxProductCode
+};
 
-    await logAudit(
-      'SYSTEM_CONFIG_UPDATED',
-      user.name,
-      'system_config',
-      '-',
-      JSON.stringify({ labeler_code, max_product_code })
-    );
+const updated = await writeData('config.json', {
+  id: configId,
+  labeler_code,
+  max_product_code,
+  updated_by: user.name
+});
 
+await logAudit(
+  'SYSTEM_CONFIG_UPDATED',
+  user.name,
+  'system_config',
+  JSON.stringify(oldSnapshot),
+  JSON.stringify({
+    labeler_code: labeler_code ?? oldSnapshot.labeler_code,
+    max_product_code: max_product_code ?? oldSnapshot.max_product_code
+  })
+);
     return NextResponse.json({
       success: true,
       message: 'System configuration updated',

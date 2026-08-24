@@ -229,7 +229,11 @@ export default function ProductsPage() {
           ) : (
             <div>
               {filteredProducts.map((product, i) => (
-                <div key={product.id} style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
+              <div
+  key={product.id}
+  style={{ ...(i % 2 === 0 ? s.rowEven : s.rowOdd), cursor: 'pointer' }}
+  onClick={() => router.push(`/products/${product.id}`)}
+>
                   <div style={s.rowLeft}>
                     <div style={s.rowIcon}>💊</div>
                     <div>
@@ -256,9 +260,10 @@ export default function ProductsPage() {
                     {user?.role !== 'Viewer' && (
                       <>
                         <button
-                          onClick={() =>
-                            handleStatusToggle(product.id, product.status)
-                          }
+  onClick={(e) => {
+    e.stopPropagation();
+    handleStatusToggle(product.id, product.status);
+  }}
                           style={{
                             ...s.toggleBtn,
                             color:
@@ -275,8 +280,14 @@ export default function ProductsPage() {
                             ? 'Deactivate'
                             : 'Reactivate'}
                         </button>
-                       <IconActionButton icon="✎" label="Edit" onClick={() => handleEdit(product)} />
-
+                     <IconActionButton
+  icon="✎"
+  label="Edit"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleEdit(product);
+  }}
+/>
                       </>
                     )}
                   </div>
