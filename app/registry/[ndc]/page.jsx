@@ -131,7 +131,7 @@ export default function NDCDetailPage() {
     <Layout current="/registry">
       <div style={s.page}>
 
-        <button style={s.backLink} onClick={() => router.push('/registry')}>
+        <button className="no-print" style={s.backLink} onClick={() => router.push('/registry')}>
           ← Back to Registry
         </button>
 
@@ -173,7 +173,7 @@ export default function NDCDetailPage() {
           <div style={s.cardHead}>
             <span style={s.cardTitle}>Product</span>
             {product && (
-              <button style={s.editBtn} onClick={() => router.push(`/products/${product.id}`)}>
+              <button className="no-print" style={s.editBtn} onClick={() => router.push(`/products/${product.id}`)}>
                 View Product →
               </button>
             )}
@@ -199,7 +199,7 @@ export default function NDCDetailPage() {
           <div style={s.cardHead}>
             <span style={s.cardTitle}>Package</span>
             {pkg && (
-              <button style={s.editBtn} onClick={() => router.push(`/packages/${pkg.id}`)}>
+              <button className="no-print" style={s.editBtn} onClick={() => router.push(`/packages/${pkg.id}`)}>
                 View Package →
               </button>
             )}
