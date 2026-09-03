@@ -223,3 +223,22 @@ export async function destroyAllUserSessions(userId) {
   ]);
 
 }
+
+
+// COUNT RECENT LOGIN FAILURES (for rate limiting)
+
+export async function countRecentLoginFailures(email, minutes = 15) {
+
+  const result = await pool.query(`
+    SELECT COUNT(*) AS count
+    FROM audit_log
+    WHERE action = 'LOGIN_FAILED'
+      AND record_id = $1
+      AND timestamp > NOW() - ($2 || ' minutes')::interval
+  `, [
+    email,
+    minutes
+  ]);
+
+  return parseInt(result.rows[0].count, 10);
+}

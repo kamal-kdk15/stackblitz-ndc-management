@@ -122,7 +122,7 @@ export default function Layout({ children, current }) {
                 <div style={s.userRole}>{user?.role}</div>
               </div>
               <button style={s.logoutIcon} onClick={handleLogout} title="Sign out">
-                ↪
+                ↪ Logout
               </button>
             </div>
           )}

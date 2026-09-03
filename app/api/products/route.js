@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../lib/jsonDB';
 import { logAudit } from '../../lib/audit';
+import { notifyStatusChanged } from '../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,6 +226,14 @@ if (
     oldStatus,
     status
   );
+
+  await notifyStatusChanged({
+  type: 'Product',
+  recordLabel: product.product_code,
+  oldStatus,
+  newStatus: status,
+  changedBy: updated_by,
+});
 
 if (status === 'Inactive' && oldStatus !== 'Inactive') {
 

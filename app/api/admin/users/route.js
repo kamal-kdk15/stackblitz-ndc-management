@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../../lib/jsonDB';
 import { logAudit } from '../../../lib/audit';
 import { getCurrentUser } from '../../../lib/auth';
+import { notifyUserCreated } from '../../../lib/notify';
+import bcrypt from 'bcryptjs';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -70,16 +73,19 @@ export async function POST(request) {
         { status: 409 }
       );
     }
+const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await writeData('users.json', {
       name,
       email,
-      password,
+       password: hashedPassword,
       role,
       is_active: true
     });
 
 await logAudit('USER_CREATED', admin.name, email, '-', JSON.stringify({ name, email, role }));
+
+await notifyUserCreated({ name, email, role, createdBy: admin.name });
 
     return NextResponse.json({
       success: true,

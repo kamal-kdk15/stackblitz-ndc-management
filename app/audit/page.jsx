@@ -72,6 +72,52 @@ export default function AuditPage() {
     CHANGE_REVIEWED: { bg: '#F0F4FF', color: '#3730A3' },
   };
 
+  function parseMaybeJSON(str) {
+    if (!str || str === '-') return null;
+    try {
+      return JSON.parse(str);
+    } catch {
+      return str;
+    }
+  }
+
+  function formatAuditDiff(oldStr, newStr) {
+    const oldVal = parseMaybeJSON(oldStr);
+    const newVal = parseMaybeJSON(newStr);
+
+    const isOldObj = oldVal !== null && typeof oldVal === 'object';
+    const isNewObj = newVal !== null && typeof newVal === 'object';
+
+    // Plain strings (e.g. "Google SSO", "Deleted") — show as-is
+    if (!isOldObj && !isNewObj) {
+      return {
+        oldDisplay: oldVal === null ? '—' : String(oldVal),
+        newDisplay: newVal === null ? '—' : String(newVal),
+      };
+    }
+
+    // At least one side is an object — diff only the changed keys
+    const base = isNewObj ? newVal : oldVal;
+    const changedKeys = Object.keys(base).filter((key) => {
+      const o = isOldObj ? oldVal[key] : undefined;
+      const n = isNewObj ? newVal[key] : undefined;
+      return JSON.stringify(o) !== JSON.stringify(n);
+    });
+
+    if (changedKeys.length === 0) {
+      return { oldDisplay: '—', newDisplay: '—' };
+    }
+
+    const oldDisplay = changedKeys
+      .map((k) => `${k}: ${isOldObj && oldVal[k] !== undefined ? oldVal[k] : '—'}`)
+      .join(', ');
+    const newDisplay = changedKeys
+      .map((k) => `${k}: ${isNewObj && newVal[k] !== undefined ? newVal[k] : '—'}`)
+      .join(', ');
+
+    return { oldDisplay, newDisplay };
+  }
+
   // Static list so the dropdown doesn't shift as the visible/filtered log set changes
   const knownActions = [
     'LOGIN', 'LOGOUT', 'NDC_CREATED', 'NDC_ACTIVATED', 'NDC_DEACTIVATED',
@@ -218,6 +264,7 @@ export default function AuditPage() {
                 <tbody>
                   {logs.map((l, i) => {
                     const color = actionColors[l.action] || { bg: '#F5F3EF', color: '#666' };
+                    const { oldDisplay, newDisplay } = formatAuditDiff(l.oldValue, l.newValue);
                     return (
                       <tr key={i} style={i % 2 === 0 ? s.trEven : s.trOdd}>
                         <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>{i + 1}</td>
@@ -234,11 +281,11 @@ export default function AuditPage() {
                             <span style={{ color: '#CCC' }}>—</span>
                           )}
                         </td>
-                        <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>
-                          {l.oldValue && l.oldValue !== '-' ? l.oldValue : '—'}
+                        <td style={s.tdTruncate} title={oldDisplay}>
+                          {oldDisplay}
                         </td>
-                        <td style={{ ...s.td, color: '#666', fontSize: '12px' }}>
-                          {l.newValue && l.newValue !== '-' ? l.newValue : '—'}
+                        <td style={{ ...s.tdTruncate, color: '#666' }} title={newDisplay}>
+                          {newDisplay}
                         </td>
                         <td style={{ ...s.td, color: '#AAA', fontSize: '12px', whiteSpace: 'nowrap' }}>
                           {l.timestamp}
@@ -287,6 +334,17 @@ const s = {
   thead: { background: '#FAF8F5', borderBottom: '1px solid #EDE8E0' },
   th: { padding: '11px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#AAA', letterSpacing: '0.5px', textTransform: 'uppercase', whiteSpace: 'nowrap' },
   td: { padding: '11px 16px', borderBottom: '1px solid #F5F2ED', color: '#1A1A1A', fontSize: '13px' },
+  tdTruncate: {
+    padding: '11px 16px',
+    borderBottom: '1px solid #F5F2ED',
+    color: '#AAA',
+    fontSize: '12px',
+    maxWidth: '220px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    cursor: 'default',
+  },
   trEven: { background: 'white' },
   trOdd: { background: '#FDFCFA' },
   actionBadge: { display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap' },

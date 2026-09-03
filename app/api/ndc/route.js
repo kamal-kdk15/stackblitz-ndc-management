@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../lib/jsonDB';
 import { logAudit } from '../../lib/audit';
 import { validateAssignedCodes } from '../../lib/ndcRules.mjs';
+import { notifyNdcCreated, notifyStatusChanged } from '../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,7 +124,7 @@ export async function POST(request) {
         '-',
         ndc_code
       );
-
+await notifyNdcCreated(newNDC);
       return NextResponse.json({
         success: true,
         message: 'NDC created successfully',
@@ -289,6 +290,14 @@ export async function PATCH(request) {
         'Active'
       );
 
+      await notifyStatusChanged({
+  type: 'NDC',
+  recordLabel: requestItem.ndc_code,
+  oldStatus: 'PendingAdminReview',
+  newStatus: 'Active',
+  changedBy: updatedBy,
+});
+
       return NextResponse.json({
         success: true,
         message: 'NDC activated successfully.',
@@ -321,6 +330,13 @@ export async function PATCH(request) {
         'Active',
         'Inactive'
       );
+      await notifyStatusChanged({
+  type: 'NDC',
+  recordLabel: requestItem.ndc_code,
+  oldStatus: 'Active',
+  newStatus: 'Inactive',
+  changedBy: updatedBy,
+});
 
       return NextResponse.json({
         success: true,

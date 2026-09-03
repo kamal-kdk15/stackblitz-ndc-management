@@ -1,14 +1,27 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const ssoError = searchParams.get('error');
+    if (ssoError === 'NoAccount') {
+      setError('No account found for this Google email. Contact your administrator.');
+    } else if (ssoError === 'Deactivated') {
+      setError('This account has been deactivated.');
+    } else if (ssoError) {
+      setError('Unable to sign in with Google. Please try again.');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetch('/api/me')
@@ -127,6 +140,20 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+
+          <div style={s.divider2}>
+            <span style={s.dividerLine} />
+            <span style={s.dividerText}>OR</span>
+            <span style={s.dividerLine} />
+          </div>
+
+          <button
+            type="button"
+            style={s.googleBtn}
+            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+          >
+            Sign in with Google
+          </button>
 
           <p style={s.hint}>Contact your administrator if you need access.</p>
         </div>
@@ -302,5 +329,32 @@ const s = {
     fontSize: '12px',
     color: '#AAA',
     marginTop: '24px',
+  },
+  divider2: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    margin: '20px 0',
+  },
+  dividerLine: {
+    flex: 1,
+    height: '1px',
+    background: '#E2DCD2',
+  },
+  dividerText: {
+    fontSize: '11px',
+    color: '#AAA',
+    fontWeight: '600',
+  },
+  googleBtn: {
+    width: '100%',
+    padding: '13px',
+    background: 'white',
+    color: '#444',
+    border: '1.5px solid #E2DCD2',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
   },
 };

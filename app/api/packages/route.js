@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readData, writeData } from '../../lib/jsonDB';
 import { logAudit } from '../../lib/audit';
+import { notifyStatusChanged } from '../../lib/notify';
 
 export const dynamic = 'force-dynamic';
 
@@ -223,7 +224,13 @@ export async function PATCH(request) {
         oldStatus,
         status
       );
-
+await notifyStatusChanged({
+  type: 'Package',
+  recordLabel: pkg.package_code,
+  oldStatus,
+  newStatus: status,
+  changedBy: updated_by,
+});
       return NextResponse.json({
         success: true,
         message: `Package status updated to ${status}`
