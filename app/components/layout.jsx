@@ -59,7 +59,16 @@ export default function Layout({ children, current }) {
 
   return (
     <div style={s.root}>
-      <aside style={{ ...s.sidebar, width: sidebarWidth }}>
+     
+<style>{`
+  @media print {
+    .no-print { display: none !important; }
+    .print-main { margin-left: 0 !important; }
+    body { background: white !important; }
+  }
+`}</style>
+
+     <aside className="no-print" style={{ ...s.sidebar, width: sidebarWidth }}>
         <div style={s.brand}>
           <div style={{ ...s.brandTop, ...(collapsed ? s.brandTopCollapsed : {}) }}>
             {!collapsed && <img src="/sunpharma.png" alt="Sun Pharma" style={s.brandImg} />}
@@ -129,7 +138,7 @@ export default function Layout({ children, current }) {
         </div>
       </aside>
 
-      <div style={{ ...s.main, marginLeft: sidebarWidth }}>{children}</div>
+<div className="print-main" style={{ ...s.main, marginLeft: sidebarWidth }}>{children}</div>
     </div>
   );
 }

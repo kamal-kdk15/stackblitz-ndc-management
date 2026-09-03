@@ -140,7 +140,12 @@ export default function NDCDetailPage() {
             <h1 style={s.pageTitle}>NDC Details</h1>
             <p style={s.pageSub}>Full record for this National Drug Code — Sun Pharma Industries Ltd.</p>
           </div>
-          <span style={statusBadgeStyle}>{ndc.status || 'Unknown'}</span>
+         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+    <button className="no-print" style={s.editBtn} onClick={() => window.print()}>
+      🖶 Print / Save as PDF
+    </button>
+    <span style={statusBadgeStyle}>{ndc.status || 'Unknown'}</span>
+  </div>
         </div>
 
         {/* Overview */}

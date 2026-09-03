@@ -114,7 +114,9 @@ useEffect(() => {
                 All generated National Drug Codes — Sun Pharma Industries Ltd.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+   
+
              <button style={s.exportBtn} onClick={handleExport}>
               ⇩ Export
             </button>
