@@ -13,6 +13,11 @@ export default function AuditPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+const [page, setPage] = useState(1);
+const [total, setTotal] = useState(0);
+const pageSize = 50;
+
+useEffect(() => { fetchAudit(); }, [page]);
 
   useEffect(() => {
     fetch('/api/me')
@@ -30,6 +35,8 @@ export default function AuditPage() {
 
   function buildQuery() {
     const params = new URLSearchParams();
+    params.set('page', page);
+params.set('pageSize', pageSize);
     if (search) params.set('search', search);
     if (filterAction) params.set('action', filterAction);
     if (dateFrom) params.set('dateFrom', dateFrom);
@@ -37,18 +44,36 @@ export default function AuditPage() {
     return params.toString();
   }
 
-  async function fetchAudit() {
-    setLoading(true);
-    try {
-      const qs = buildQuery();
-      const res = await fetch(`/api/audit${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
-      const data = await res.json();
-      if (data.success) setLogs(data.data);
-    } catch (e) {
-      console.log(e);
+  async function fetchAudit(targetPage = page) {
+  setLoading(true);
+
+  try {
+    const params = new URLSearchParams();
+
+    params.set('page', targetPage);
+    params.set('pageSize', pageSize);
+
+    if (search) params.set('search', search);
+    if (filterAction) params.set('action', filterAction);
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+
+    const res = await fetch(`/api/audit?${params.toString()}`, {
+      cache: 'no-store'
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      setLogs(data.data);
+      setTotal(data.total);
     }
+  } catch (e) {
+    console.log(e);
+  } finally {
     setLoading(false);
   }
+}
 
   function handleClearFilters() {
     setSearch('');
@@ -88,7 +113,7 @@ export default function AuditPage() {
     const isOldObj = oldVal !== null && typeof oldVal === 'object';
     const isNewObj = newVal !== null && typeof newVal === 'object';
 
-    // Plain strings (e.g. "Google SSO", "Deleted") — show as-is
+    // Plain strings 
     if (!isOldObj && !isNewObj) {
       return {
         oldDisplay: oldVal === null ? '—' : String(oldVal),
@@ -96,7 +121,7 @@ export default function AuditPage() {
       };
     }
 
-    // At least one side is an object — diff only the changed keys
+    // At least one side is an object
     const base = isNewObj ? newVal : oldVal;
     const changedKeys = Object.keys(base).filter((key) => {
       const o = isOldObj ? oldVal[key] : undefined;
@@ -118,7 +143,7 @@ export default function AuditPage() {
     return { oldDisplay, newDisplay };
   }
 
-  // Static list so the dropdown doesn't shift as the visible/filtered log set changes
+ 
   const knownActions = [
     'LOGIN', 'LOGOUT', 'NDC_CREATED', 'NDC_ACTIVATED', 'NDC_DEACTIVATED',
     'PRODUCT_CREATED', 'PRODUCT_UPDATED', 'PRODUCT_STATUS_CHANGED',
@@ -168,12 +193,12 @@ export default function AuditPage() {
             </div>
             <div style={s.statLabel}>Logins</div>
           </div>
-          <div style={s.statCard}>
+          {/* <div style={s.statCard}>
             <div style={{ ...s.statNum, color: '#92400E' }}>
               {logs.filter((l) => l.action === 'CHANGE_REQUESTED').length}
             </div>
             <div style={s.statLabel}>Change Requests</div>
-          </div>
+          </div> */}
         </div>
 
         <div style={s.card}>
@@ -198,9 +223,15 @@ export default function AuditPage() {
             >
               ▤ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
-            <button style={s.applyBtn} onClick={fetchAudit}>
-              Search
-            </button>
+           <button
+  style={s.applyBtn}
+  onClick={() => {
+    setPage(1);
+    fetchAudit(1);
+  }}
+>
+  Search
+</button>
             {(search || activeFilterCount > 0) && (
               <button style={s.clearBtn} onClick={handleClearFilters}>
                 Clear
@@ -298,6 +329,25 @@ export default function AuditPage() {
             </div>
           )}
         </div>
+        <div style={s.paginationRow}>
+  <button
+    style={s.pageBtn}
+    disabled={page === 1}
+    onClick={() => setPage(p => p - 1)}
+  >
+    ← Previous
+  </button>
+  <span style={s.pageInfo}>
+    Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total records
+  </span>
+  <button
+    style={s.pageBtn}
+    disabled={page >= Math.ceil(total / pageSize)}
+    onClick={() => setPage(p => p + 1)}
+  >
+    Next →
+  </button>
+</div>
       </div>
     </Layout>
   );
@@ -318,6 +368,9 @@ const s = {
   cardHead: { padding: '14px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { fontSize: '13px', fontWeight: '600', color: '#1A1A1A' },
   countBadge: { fontSize: '12px', color: '#AAA' },
+  paginationRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '16px 20px', borderTop: '1px solid #EDE8E0' },
+pageBtn: { padding: '8px 16px', border: '1.5px solid #EDE8E0', borderRadius: '7px', background: 'white', color: '#444', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+pageInfo: { fontSize: '13px', color: '#999' },
   filterRow: { padding: '12px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
   searchWrap: { flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px', background: '#FAF8F5', border: '1.5px solid #EDE8E0', borderRadius: '8px', padding: '0 12px' },
   searchInput: { flex: 1, padding: '8px 0', border: 'none', background: 'transparent', fontSize: '13px', outline: 'none', color: '#1A1A1A' },

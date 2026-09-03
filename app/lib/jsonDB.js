@@ -31,7 +31,7 @@ async function writeFallbackData(fileName, data) {
   }
 }
 
-export async function readData(fileName, filters = {}) {
+export async function readData(fileName, filters = {}, pagination = {}) {
   try {
    if (fileName === 'users.json') {
   const result = await pool.query('SELECT * FROM users');
@@ -56,27 +56,71 @@ export async function readData(fileName, filters = {}) {
     updatedAt: r.updated_at
   }));
 }
-     else if (fileName === 'ndc.json') {
+   else if (fileName === 'ndc.json') {
   let query = 'SELECT * FROM ndc_registry WHERE 1=1';
   const params = [];
   let i = 1;
 
   if (filters.search) {
-    query += ` AND (ndc_code ILIKE $${i} OR product_name ILIKE $${i} OR anda_number ILIKE $${i})`;
+    query += ` AND (
+      ndc_code ILIKE $${i}
+      OR product_name ILIKE $${i}
+      OR anda_number ILIKE $${i}
+    )`;
     params.push(`%${filters.search}%`);
     i++;
   }
-  if (filters.status) { query += ` AND status = $${i++}`; params.push(filters.status); }
-  if (filters.rx_otc) { query += ` AND rx_otc = $${i++}`; params.push(filters.rx_otc); }
-  if (filters.dosage_form) { query += ` AND dosage_form ILIKE $${i++}`; params.push(`%${filters.dosage_form}%`); }
-  if (filters.created_by) { query += ` AND created_by ILIKE $${i++}`; params.push(`%${filters.created_by}%`); }
-  if (filters.dateFrom) { query += ` AND created_at >= $${i++}`; params.push(filters.dateFrom); }
-  if (filters.dateTo) { query += ` AND created_at <= $${i++}`; params.push(filters.dateTo); }
+
+  if (filters.status) {
+    query += ` AND status = $${i++}`;
+    params.push(filters.status);
+  }
+
+  if (filters.rx_otc) {
+    query += ` AND rx_otc = $${i++}`;
+    params.push(filters.rx_otc);
+  }
+
+  if (filters.dosage_form) {
+    query += ` AND dosage_form ILIKE $${i++}`;
+    params.push(`%${filters.dosage_form}%`);
+  }
+
+  if (filters.created_by) {
+    query += ` AND created_by ILIKE $${i++}`;
+    params.push(`%${filters.created_by}%`);
+  }
+
+  if (filters.dateFrom) {
+    query += ` AND created_at >= $${i++}`;
+    params.push(filters.dateFrom);
+  }
+
+  if (filters.dateTo) {
+    query += ` AND created_at <= $${i++}`;
+    params.push(filters.dateTo);
+  }
 
   query += ' ORDER BY id DESC';
 
+  
+  if (pagination?.page) {
+    const pageSize = pagination.pageSize || 50;
+    const offset = (pagination.page - 1) * pageSize;
+
+    query = query.replace(
+      'SELECT *',
+      'SELECT *, COUNT(*) OVER() AS total_count'
+    );
+
+    query += ` LIMIT $${i++} OFFSET $${i++}`;
+
+    params.push(pageSize, offset);
+  }
+
   const result = await pool.query(query, params);
-  return result.rows.map(r => ({
+
+  const data = result.rows.map(r => ({
     id: r.id,
     ndc_code: r.ndc_code,
     product_name: r.product_name,
@@ -90,25 +134,72 @@ export async function readData(fileName, filters = {}) {
     created_by: r.created_by,
     created_at: r.created_at
   }));
-} 
- else if (fileName === 'audit.json') {
+
+  
+  if (pagination?.page) {
+    const total = result.rows.length > 0
+      ? parseInt(result.rows[0].total_count, 10)
+      : 0;
+
+    return {
+      data,
+      total
+    };
+  }
+
+ 
+  return data;
+}
+else if (fileName === 'audit.json') {
   let query = 'SELECT * FROM audit_log WHERE 1=1';
   const params = [];
   let i = 1;
 
   if (filters.search) {
-    query += ` AND (performed_by ILIKE $${i} OR record_id ILIKE $${i} OR action ILIKE $${i})`;
+    query += ` AND (
+      performed_by ILIKE $${i}
+      OR record_id ILIKE $${i}
+      OR action ILIKE $${i}
+    )`;
     params.push(`%${filters.search}%`);
     i++;
   }
-  if (filters.action) { query += ` AND action = $${i++}`; params.push(filters.action); }
-  if (filters.dateFrom) { query += ` AND timestamp >= $${i++}`; params.push(filters.dateFrom); }
-  if (filters.dateTo) { query += ` AND timestamp <= $${i++}`; params.push(filters.dateTo); }
+
+  if (filters.action) {
+    query += ` AND action = $${i++}`;
+    params.push(filters.action);
+  }
+
+  if (filters.dateFrom) {
+    query += ` AND timestamp >= $${i++}`;
+    params.push(filters.dateFrom);
+  }
+
+  if (filters.dateTo) {
+    query += ` AND timestamp <= $${i++}`;
+    params.push(filters.dateTo);
+  }
 
   query += ' ORDER BY id DESC';
 
+  // Pagination
+  if (pagination?.page) {
+    const pageSize = pagination.pageSize || 50;
+    const offset = (pagination.page - 1) * pageSize;
+
+    query = query.replace(
+      'SELECT *',
+      'SELECT *, COUNT(*) OVER() AS total_count'
+    );
+
+    query += ` LIMIT $${i++} OFFSET $${i++}`;
+
+    params.push(pageSize, offset);
+  }
+
   const result = await pool.query(query, params);
-  return result.rows.map(r => ({
+
+  const data = result.rows.map(r => ({
     id: r.id,
     action: r.action,
     performedBy: r.performed_by,
@@ -117,7 +208,21 @@ export async function readData(fileName, filters = {}) {
     newValue: r.new_value,
     timestamp: r.timestamp
   }));
-} 
+
+  if (pagination?.page) {
+    const total =
+      result.rows.length > 0
+        ? parseInt(result.rows[0].total_count, 10)
+        : 0;
+
+    return {
+      data,
+      total
+    };
+  }
+
+  return data;
+}
 else if (fileName === 'changes.json') {
       const result = await pool.query(
         'SELECT * FROM change_requests ORDER BY id DESC'

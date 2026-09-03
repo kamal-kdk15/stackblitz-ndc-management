@@ -20,6 +20,11 @@ export default function RegistryPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
+const [page, setPage] = useState(1);
+const [total, setTotal] = useState(0);
+const pageSize = 50;
+
+useEffect(() => { fetchRegistry(); }, [page]);
 
  useEffect(() => {
   const urlStatus = searchParams.get('status');
@@ -51,6 +56,8 @@ useEffect(() => {
 
   function buildQuery() {
     const params = new URLSearchParams();
+    params.set('page', page);
+params.set('pageSize', pageSize);
     if (search) params.set('search', search);
     if (status) params.set('status', status);
     if (rxOtc) params.set('rx_otc', rxOtc);
@@ -67,7 +74,10 @@ useEffect(() => {
       const qs = buildQuery();
       const res = await fetch(`/api/ndc${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success) setRegistry(data.data);
+   if (data.success) {
+  setRegistry(data.data);
+  setTotal(data.total);
+}
     } catch (e) {
       console.log(e);
     }
@@ -264,7 +274,7 @@ useEffect(() => {
     </td>
     <td style={{ ...s.td, fontWeight: '600', color: '#1C2B2B' }}>{r.product_name}</td>
 
-                        <td style={{ ...s.td, fontWeight: '600', color: '#1C2B2B' }}>{r.product_name}</td>
+                       
                         <td style={s.td}>{r.strength}</td>
                         <td style={s.td}>{r.dosage_form}</td>
                         <td style={s.td}>
@@ -294,7 +304,27 @@ useEffect(() => {
                 </table>
               </div>
             )}
+            
           </div>
+          <div style={s.paginationRow}>
+  <button
+    style={s.pageBtn}
+    disabled={page === 1}
+    onClick={() => setPage(p => p - 1)}
+  >
+   ⇦
+  </button>
+  <span style={s.pageInfo}>
+    Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total records
+  </span>
+  <button
+    style={s.pageBtn}
+    disabled={page >= Math.ceil(total / pageSize)}
+    onClick={() => setPage(p => p + 1)}
+  >
+   ⇨
+  </button>
+</div>
         </div>
 
         {showWizard && (
@@ -316,7 +346,9 @@ const s = {
   pageSub: { fontSize: '13px', color: '#999' },
   primaryBtn: { padding: '9px 18px', background: '#E8650A', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', flexShrink: 0 },
   exportBtn: { padding: '9px 16px', background: 'white', color: '#444', border: '1.5px solid #EDE8E0', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' },
-
+paginationRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '16px 20px', borderTop: '1px solid #EDE8E0' },
+pageBtn: { padding: '8px 16px', border: '1.5px solid #EDE8E0', borderRadius: '7px', background: 'white', color: '#444', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+pageInfo: { fontSize: '13px', color: '#999' },
   card: { background: 'white', borderRadius: '12px', border: '1px solid #EDE8E0', overflow: 'hidden' },
   filterRow: { padding: '14px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
   searchWrap: { flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px', background: '#FAF8F5', border: '1.5px solid #EDE8E0', borderRadius: '8px', padding: '0 12px' },

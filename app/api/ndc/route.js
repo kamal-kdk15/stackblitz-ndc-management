@@ -9,13 +9,36 @@ export const dynamic = 'force-dynamic';
 export async function GET(request) {
   try {
     const sp = request.nextUrl.searchParams;
+
     const type = sp.get('type');
 
+    // Pagination
+    const page = Math.max(parseInt(sp.get('page')) || 1, 1);
+    const pageSize = Math.min(
+      Math.max(parseInt(sp.get('pageSize')) || 50, 1),
+      100
+    );
+
+    // Pending requests
     if (type === 'pending') {
       const pendingRequests = await readData('ndc_requests.json');
+
+      const filtered = pendingRequests.filter(
+        (item) => item.status !== 'Activated'
+      );
+
+      // Pagination for pending requests too
+      const total = filtered.length;
+      const start = (page - 1) * pageSize;
+      const paginatedData = filtered.slice(start, start + pageSize);
+
       return NextResponse.json({
         success: true,
-        data: pendingRequests.filter((item) => item.status !== 'Activated')
+        data: paginatedData,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
       });
     }
 
@@ -29,19 +52,31 @@ export async function GET(request) {
       dateTo: sp.get('dateTo') || undefined,
     };
 
-    const data = await readData('ndc.json', filters);
+    const result = await readData(
+      'ndc.json',
+      filters,
+      {
+        page,
+        pageSize,
+      }
+    );
 
     return NextResponse.json({
       success: true,
-      data
+      data: result.data,
+      total: result.total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(result.total / pageSize),
     });
+
   } catch (error) {
     console.error('NDC GET Error:', error);
 
     return NextResponse.json(
       {
         success: false,
-        message: 'Failed to fetch NDC data'
+        message: 'Failed to fetch NDC data',
       },
       { status: 500 }
     );
