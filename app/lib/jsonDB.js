@@ -71,6 +71,20 @@ export async function readData(fileName, filters = {}, pagination = {}) {
     i++;
   }
 
+  const containsFilters = [
+    ['ndc_code', filters.ndc_code],
+    ['product_name', filters.product_name],
+    ['strength', filters.strength],
+    ['anda_number', filters.anda_number],
+  ];
+
+  for (const [column, value] of containsFilters) {
+    if (value) {
+      query += ` AND ${column} ILIKE $${i++}`;
+      params.push(`%${value}%`);
+    }
+  }
+
   if (filters.status) {
     query += ` AND status = $${i++}`;
     params.push(filters.status);
@@ -163,6 +177,20 @@ else if (fileName === 'audit.json') {
     )`;
     params.push(`%${filters.search}%`);
     i++;
+  }
+
+  const containsFilters = [
+    ['performed_by', filters.performed_by],
+    ['record_id', filters.record_id],
+    ['old_value', filters.old_value],
+    ['new_value', filters.new_value],
+  ];
+
+  for (const [column, value] of containsFilters) {
+    if (value) {
+      query += ` AND ${column} ILIKE $${i++}`;
+      params.push(`%${value}%`);
+    }
   }
 
   if (filters.action) {

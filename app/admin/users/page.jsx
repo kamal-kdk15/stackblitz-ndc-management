@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
           ) : (
             <div>
               {filtered.map((u, i) => (
-                <div key={u.id} style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
+                <div key={u.id} className="data-list-row" style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
                   <div style={s.rowLeft}>
                     <div style={s.avatar}>{u.name?.charAt(0) || 'U'}</div>
                     <div>

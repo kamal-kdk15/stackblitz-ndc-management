@@ -37,6 +37,32 @@ a { text-decoration: none; color: inherit; }
 button { font-family: inherit; }
 input, select, textarea { font-family: inherit; }
 
+.data-table-row,
+.data-list-row {
+  transition: box-shadow 0.14s ease;
+}
+
+.data-table-row:hover,
+.data-list-row:hover {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.data-table-row:hover td {
+  background: #FFF8F2 !important;
+}
+
+.data-table-row:hover {
+  box-shadow: none;
+}
+
+.data-table-row:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.data-list-row:hover {
+  background: #FFF8F2 !important;
+}
+
 .export-wrap {
   position: relative;
   display: inline-flex;

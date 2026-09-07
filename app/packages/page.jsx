@@ -309,6 +309,7 @@ export default function PackagesPage() {
                 {filteredPackages.map((pkg, i) => (
                 <div
   key={pkg.id}
+  className="data-list-row"
   style={{ ...(i % 2 === 0 ? s.rowEven : s.rowOdd), cursor: 'pointer' }}
   onClick={() => router.push(`/packages/${pkg.id}`)}
 >

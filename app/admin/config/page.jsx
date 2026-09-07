@@ -304,7 +304,7 @@ export default function AdminConfigPage() {
           ) : (
             <div>
               {history.map((h, i) => (
-                <div key={h.id} style={i % 2 === 0 ? s.historyRowEven : s.historyRowOdd}>
+                <div key={h.id} className="data-list-row" style={i % 2 === 0 ? s.historyRowEven : s.historyRowOdd}>
                   <div style={s.historyLeft}>
                     <div style={s.historyAvatar}>{h.performedBy?.charAt(0) || 'U'}</div>
                     <div>

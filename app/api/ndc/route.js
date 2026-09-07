@@ -44,9 +44,13 @@ export async function GET(request) {
 
     const filters = {
       search: sp.get('search') || undefined,
+      ndc_code: sp.get('ndc_code') || undefined,
+      product_name: sp.get('product_name') || undefined,
+      strength: sp.get('strength') || undefined,
       status: sp.get('status') || undefined,
       rx_otc: sp.get('rx_otc') || undefined,
       dosage_form: sp.get('dosage_form') || undefined,
+      anda_number: sp.get('anda_number') || undefined,
       created_by: sp.get('created_by') || undefined,
       dateFrom: sp.get('dateFrom') || undefined,
       dateTo: sp.get('dateTo') || undefined,

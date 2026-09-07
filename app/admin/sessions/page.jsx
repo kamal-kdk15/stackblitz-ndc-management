@@ -170,7 +170,7 @@ export default function AdminSessionsPage() {
                   </div>
 
                   {userSessions.map((sess, i) => (
-                    <div key={sess.id} style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
+                    <div key={sess.id} className="data-list-row" style={i % 2 === 0 ? s.rowEven : s.rowOdd}>
                       <div style={s.rowLeft}>
                         <div style={s.sessionIcon}>▭</div>
                         <div>

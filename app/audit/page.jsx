@@ -9,10 +9,13 @@ export default function AuditPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [performedBy, setPerformedBy] = useState('');
+  const [recordId, setRecordId] = useState('');
+  const [oldValue, setOldValue] = useState('');
+  const [newValue, setNewValue] = useState('');
   const [filterAction, setFilterAction] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 const [page, setPage] = useState(1);
 const [total, setTotal] = useState(0);
 const pageSize = 50;
@@ -38,13 +41,17 @@ useEffect(() => { fetchAudit(); }, [page]);
     params.set('page', page);
 params.set('pageSize', pageSize);
     if (search) params.set('search', search);
+    if (performedBy) params.set('performed_by', performedBy);
+    if (recordId) params.set('record_id', recordId);
+    if (oldValue) params.set('old_value', oldValue);
+    if (newValue) params.set('new_value', newValue);
     if (filterAction) params.set('action', filterAction);
     if (dateFrom) params.set('dateFrom', dateFrom);
     if (dateTo) params.set('dateTo', dateTo);
     return params.toString();
   }
 
-  async function fetchAudit(targetPage = page) {
+  async function fetchAudit(targetPage = page, overrides = {}) {
   setLoading(true);
 
   try {
@@ -53,10 +60,10 @@ params.set('pageSize', pageSize);
     params.set('page', targetPage);
     params.set('pageSize', pageSize);
 
-    if (search) params.set('search', search);
-    if (filterAction) params.set('action', filterAction);
-    if (dateFrom) params.set('dateFrom', dateFrom);
-    if (dateTo) params.set('dateTo', dateTo);
+    const filters = { search, performed_by: performedBy, record_id: recordId, old_value: oldValue, new_value: newValue, action: filterAction, dateFrom, dateTo, ...overrides };
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
 
     const res = await fetch(`/api/audit?${params.toString()}`, {
       cache: 'no-store'
@@ -75,12 +82,26 @@ params.set('pageSize', pageSize);
   }
 }
 
+  function applyColumnFilter(key, setter, value) {
+    setter(value);
+    setPage(1);
+    setTimeout(() => fetchAudit(1, { [key]: value }), 0);
+  }
+
   function handleClearFilters() {
     setSearch('');
+    setPerformedBy('');
+    setRecordId('');
+    setOldValue('');
+    setNewValue('');
     setFilterAction('');
     setDateFrom('');
     setDateTo('');
-    setTimeout(fetchAudit, 0);
+    setPage(1);
+    setTimeout(() => fetchAudit(1, {
+      search: '', performed_by: '', record_id: '', old_value: '', new_value: '',
+      action: '', dateFrom: '', dateTo: ''
+    }), 0);
   }
 
   function handleExport() {
@@ -152,7 +173,8 @@ params.set('pageSize', pageSize);
     'SESSION_REVOKED', 'ALL_SESSIONS_REVOKED', 'SYSTEM_CONFIG_UPDATED',
   ];
 
-  const activeFilterCount = [filterAction, dateFrom, dateTo].filter(Boolean).length;
+  const activeFilterCount = [performedBy, recordId, oldValue, newValue, filterAction, dateFrom, dateTo].filter(Boolean).length;
+  const filterOptions = (key) => [...new Set(logs.map((log) => log[key]).filter(Boolean))].slice(0, 25);
 
   if (!user) return null;
 
@@ -217,12 +239,6 @@ params.set('pageSize', pageSize);
                 onKeyDown={(e) => e.key === 'Enter' && fetchAudit()}
               />
             </div>
-            <button
-              style={{ ...s.filterToggleBtn, ...(showFilters ? s.filterToggleBtnActive : {}) }}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              ▤ Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
-            </button>
            <button
   style={s.applyBtn}
   onClick={() => {
@@ -238,31 +254,6 @@ params.set('pageSize', pageSize);
               </button>
             )}
           </div>
-
-          {showFilters && (
-            <div style={s.advancedFilterRow}>
-              <div style={s.filterField}>
-                <label style={s.filterLabel}>Action</label>
-                <select style={s.filterInput} value={filterAction} onChange={(e) => setFilterAction(e.target.value)}>
-                  <option value="">All Actions</option>
-                  {knownActions.map((a) => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={s.filterField}>
-                <label style={s.filterLabel}>From Date</label>
-                <input type="date" style={s.filterInput} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-              </div>
-              <div style={s.filterField}>
-                <label style={s.filterLabel}>To Date</label>
-                <input type="date" style={s.filterInput} value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-              </div>
-              <button style={s.applyBtn} onClick={fetchAudit}>
-                Apply
-              </button>
-            </div>
-          )}
 
           {loading ? (
             <div style={s.empty}>
@@ -284,11 +275,11 @@ params.set('pageSize', pageSize);
                 <thead>
                   <tr style={s.thead}>
                     <th style={s.th}>#</th>
-                    <th style={s.th}>Action</th>
-                    <th style={s.th}>Performed By</th>
-                    <th style={s.th}>Record</th>
-                    <th style={s.th}>Old Value</th>
-                    <th style={s.th}>New Value</th>
+                    <th style={s.th}><ColumnFilter label="Action" value={filterAction} options={knownActions} onApplied={(value) => applyColumnFilter('action', setFilterAction, value)} /></th>
+                    <th style={s.th}><ColumnFilter label="Performed By" value={performedBy} options={filterOptions('performedBy')} onApplied={(value) => applyColumnFilter('performed_by', setPerformedBy, value)} /></th>
+                    <th style={s.th}><ColumnFilter label="Record" value={recordId} options={filterOptions('recordId')} onApplied={(value) => applyColumnFilter('record_id', setRecordId, value)} /></th>
+                    <th style={s.th}><ColumnFilter label="Old Value" value={oldValue} options={filterOptions('oldValue')} onApplied={(value) => applyColumnFilter('old_value', setOldValue, value)} /></th>
+                    <th style={s.th}><ColumnFilter label="New Value" value={newValue} options={filterOptions('newValue')} onApplied={(value) => applyColumnFilter('new_value', setNewValue, value)} /></th>
                     <th style={s.th}>Timestamp</th>
                   </tr>
                 </thead>
@@ -297,7 +288,7 @@ params.set('pageSize', pageSize);
                     const color = actionColors[l.action] || { bg: '#F5F3EF', color: '#666' };
                     const { oldDisplay, newDisplay } = formatAuditDiff(l.oldValue, l.newValue);
                     return (
-                      <tr key={i} style={i % 2 === 0 ? s.trEven : s.trOdd}>
+                      <tr key={i} className="data-table-row" style={i % 2 === 0 ? s.trEven : s.trOdd}>
                         <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>{i + 1}</td>
                         <td style={s.td}>
                           <span style={{ ...s.actionBadge, background: color.bg, color: color.color }}>
@@ -331,7 +322,7 @@ params.set('pageSize', pageSize);
         </div>
         <div style={s.paginationRow}>
   <button
-    style={s.pageBtn}
+    style={{ ...s.pageBtn, ...(page === 1 ? s.pageBtnDisabled : {}) }}
     disabled={page === 1}
     onClick={() => setPage(p => p - 1)}
   >
@@ -341,7 +332,7 @@ params.set('pageSize', pageSize);
     Page {page} of {Math.max(1, Math.ceil(total / pageSize))} · {total} total records
   </span>
   <button
-    style={s.pageBtn}
+    style={{ ...s.pageBtn, ...(page >= Math.ceil(total / pageSize) ? s.pageBtnDisabled : {}) }}
     disabled={page >= Math.ceil(total / pageSize)}
     onClick={() => setPage(p => p + 1)}
   >
@@ -350,6 +341,64 @@ params.set('pageSize', pageSize);
 </div>
       </div>
     </Layout>
+  );
+}
+
+function ColumnFilter({ label, value, options = [], onApplied }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(value || '');
+  const visibleOptions = options.filter((option) => option.toLowerCase().includes(draft.toLowerCase()));
+
+  useEffect(() => {
+    if (open) setDraft(value || '');
+  }, [open, value]);
+
+  function apply() {
+    onApplied(draft);
+    setOpen(false);
+  }
+
+  function clear() {
+    onApplied('');
+    setOpen(false);
+  }
+
+  return (
+    <div style={s.columnFilter}>
+      <button
+        type="button"
+        style={{ ...s.columnFilterButton, ...(value ? s.columnFilterButtonActive : {}) }}
+        onClick={() => setOpen((isOpen) => !isOpen)}
+        aria-expanded={open}
+      >
+        {label}<span style={s.columnFilterArrow} aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <div style={s.columnFilterMenu}>
+          <input
+            autoFocus
+            style={s.columnFilterInput}
+            placeholder={`Search ${label.toLowerCase()}`}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && apply()}
+          />
+          {visibleOptions.length > 0 && (
+            <div style={s.columnFilterOptions}>
+              {visibleOptions.map((option) => (
+                <button key={option} type="button" style={s.columnFilterOption} onClick={() => setDraft(option)}>
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+          <div style={s.columnFilterActions}>
+            <button type="button" style={s.columnFilterClear} onClick={clear}>Clear</button>
+            <button type="button" style={s.columnFilterApply} onClick={apply}>Apply</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -370,7 +419,19 @@ const s = {
   countBadge: { fontSize: '12px', color: '#AAA' },
   paginationRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '16px 20px', borderTop: '1px solid #EDE8E0' },
 pageBtn: { padding: '8px 16px', border: '1.5px solid #EDE8E0', borderRadius: '7px', background: 'white', color: '#444', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
+pageBtnDisabled: { background: '#F7F5F2', borderColor: '#EEEAE4', color: '#C5C0B8', cursor: 'default', opacity: 0.72 },
 pageInfo: { fontSize: '13px', color: '#999' },
+  columnFilter: { position: 'relative', display: 'inline-block' },
+  columnFilterButton: { display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '0', border: 'none', background: 'transparent', color: '#AAA', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' },
+  columnFilterButtonActive: { color: '#C4520A' },
+  columnFilterArrow: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '4px', background: '#E8EDF0', color: '#3F5158', fontSize: '12px', fontWeight: '900', lineHeight: '1' },
+  columnFilterMenu: { position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 10, minWidth: '190px', padding: '10px', background: 'white', border: '1px solid #EDE8E0', borderRadius: '8px', boxShadow: '0 8px 24px rgba(26, 26, 26, 0.12)', textTransform: 'none', letterSpacing: 'normal' },
+  columnFilterInput: { width: '100%', padding: '8px 9px', border: '1.5px solid #EDE8E0', borderRadius: '6px', fontSize: '12px', outline: 'none', color: '#1A1A1A', background: 'white' },
+  columnFilterOptions: { display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '150px', overflowY: 'auto', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #F0ECE7' },
+  columnFilterOption: { padding: '6px 7px', border: 'none', borderRadius: '4px', background: 'transparent', color: '#4B5A5D', fontSize: '12px', textAlign: 'left', cursor: 'pointer' },
+  columnFilterActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '9px' },
+  columnFilterClear: { padding: '6px 9px', border: '1px solid #EDE8E0', borderRadius: '5px', background: 'white', color: '#777', fontSize: '11px', cursor: 'pointer' },
+  columnFilterApply: { padding: '6px 10px', border: 'none', borderRadius: '5px', background: '#1A1A1A', color: 'white', fontSize: '11px', fontWeight: '600', cursor: 'pointer' },
   filterRow: { padding: '12px 20px', borderBottom: '1px solid #EDE8E0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
   searchWrap: { flex: 1, minWidth: '200px', display: 'flex', alignItems: 'center', gap: '8px', background: '#FAF8F5', border: '1.5px solid #EDE8E0', borderRadius: '8px', padding: '0 12px' },
   searchInput: { flex: 1, padding: '8px 0', border: 'none', background: 'transparent', fontSize: '13px', outline: 'none', color: '#1A1A1A' },

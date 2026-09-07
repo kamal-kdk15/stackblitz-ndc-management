@@ -257,6 +257,7 @@ setStats({
              recent.map((r, i) => (
   <div
     key={i}
+    className="data-list-row"
     style={{ ...s.row, cursor: 'pointer' }}
     onClick={() => router.push(`/registry/${r.ndc_code}`)} 
   >
@@ -297,7 +298,20 @@ setStats({
               {searchResults.length > 0 && (
                 <div style={s.resultList}>
                   {searchResults.map((r, i) => (
-                    <div key={i} style={s.resultRow}>
+                    <div
+                      key={i}
+                      className="data-list-row"
+                      style={s.resultRow}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => router.push(`/registry/${r.ndc_code}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          router.push(`/registry/${r.ndc_code}`);
+                        }
+                      }}
+                    >
                       <span style={s.resultName}>{r.product_name}</span>
                       <span style={s.resultNdc}>{r.ndc_code}</span>
                     </div>
@@ -533,6 +547,7 @@ const s = {
     justifyContent: 'space-between',
     padding: '9px 12px',
     borderBottom: '1px solid #F5F2ED',
+    cursor: 'pointer',
   },
   resultName: {
     fontSize: '12px',

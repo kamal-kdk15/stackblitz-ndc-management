@@ -20,6 +20,10 @@ export async function GET(request) {
     const filters = {
       search: sp.get('search') || undefined,
       action: sp.get('action') || undefined,
+      performed_by: sp.get('performed_by') || undefined,
+      record_id: sp.get('record_id') || undefined,
+      old_value: sp.get('old_value') || undefined,
+      new_value: sp.get('new_value') || undefined,
       dateFrom: sp.get('dateFrom') || undefined,
       dateTo: sp.get('dateTo') || undefined,
     };

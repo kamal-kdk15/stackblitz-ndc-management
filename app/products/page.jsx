@@ -231,6 +231,7 @@ export default function ProductsPage() {
               {filteredProducts.map((product, i) => (
               <div
   key={product.id}
+  className="data-list-row"
   style={{ ...(i % 2 === 0 ? s.rowEven : s.rowOdd), cursor: 'pointer' }}
   onClick={() => router.push(`/products/${product.id}`)}
 >

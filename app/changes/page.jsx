@@ -291,7 +291,7 @@ export default function ChangesPage() {
                 </thead>
                 <tbody>
                   {changes.map((c, i) => (
-                    <tr key={c.id} style={i % 2 === 0 ? s.trEven : s.trOdd}>
+                    <tr key={c.id} className="data-table-row" style={i % 2 === 0 ? s.trEven : s.trOdd}>
                       <td style={{ ...s.td, color: '#AAA', fontSize: '12px' }}>
                         {i + 1}
                       </td>
