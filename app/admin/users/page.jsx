@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '../../components/layout.jsx';
 import IconActionButton from '../../components/IconActionButton.jsx';
-
+import { useSearchParams } from 'next/navigation';
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -16,6 +16,10 @@ export default function AdminUsersPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'Viewer' });
+const searchParams = useSearchParams();
+
+const roleFilter = searchParams.get('role');
+const statusFilter = searchParams.get('status');
 
   useEffect(() => {
     fetch('/api/me')
@@ -69,6 +73,20 @@ export default function AdminUsersPage() {
       setSaving(false);
     }
   }
+
+let filteredUsers = users;
+
+if (roleFilter) {
+  filteredUsers = filteredUsers.filter(
+    (u) =>
+      String(u.role || '').toUpperCase() ===
+      roleFilter.toUpperCase()
+  );
+}
+
+if (statusFilter === 'active') {
+  filteredUsers = filteredUsers.filter((u) => u.isActive);
+}
 
   async function handleSaveEdit() {
     if (!editingUser) return;
@@ -137,13 +155,11 @@ export default function AdminUsersPage() {
       alert('Failed to delete user');
     }
   }
-
-  const filtered = users.filter(
-    (u) =>
-      u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+const filtered = filteredUsers.filter(
+  (u) =>
+    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+);
   if (!currentUser) return null;
 
   return (
