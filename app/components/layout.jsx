@@ -13,6 +13,7 @@ const navItems = [
 export default function Layout({ children, current }) {
   const [user, setUser] = useState(null);
   const [hovered, setHovered] = useState(null);
+  const [logoutHovered, setLogoutHovered] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
 
@@ -130,8 +131,15 @@ export default function Layout({ children, current }) {
                 <div style={s.userName}>{user?.name}</div>
                 <div style={s.userRole}>{user?.role}</div>
               </div>
-              <button style={s.logoutIcon} onClick={handleLogout} title="Sign out">
-                ↪ Logout
+              <button
+                style={{ ...s.logoutButton, ...(logoutHovered ? s.logoutButtonHover : {}) }}
+                onClick={handleLogout}
+                onMouseEnter={() => setLogoutHovered(true)}
+                onMouseLeave={() => setLogoutHovered(false)}
+                title="Log out"
+              >
+                <span aria-hidden="true" style={s.logoutIcon}>⎋</span>
+                <span>Logout</span>
               </button>
             </div>
           )}
@@ -233,7 +241,29 @@ const s = {
   userInfo: { flex: 1, minWidth: 0 },
   userName: { fontSize: '13px', fontWeight: '600', color: '#1A1A1A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   userRole: { fontSize: '11px', color: '#999' },
-  logoutIcon: { background: 'transparent', border: 'none', fontSize: '15px', color: '#C4520A', cursor: 'pointer', padding: '4px', flexShrink: 0 },
+  logoutButton: {
+    background: '#FFFFFF',
+    border: '1px solid #E8D2C3',
+    borderRadius: '6px',
+    color: '#C4520A',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '600',
+    minWidth: '62px',
+    minHeight: '34px',
+    padding: '7px 10px',
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+  },
+  logoutIcon: { fontSize: '17px', lineHeight: 1 },
+  logoutButtonHover: {
+    background: '#FFF0E6',
+    borderColor: '#E8650A',
+    color: '#A94308',
+  },
 
   main: { flex: 1, minHeight: '100vh', transition: 'margin-left 0.15s ease' },
 };

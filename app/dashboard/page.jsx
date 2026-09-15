@@ -12,10 +12,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
   totalNDC: 0,
   activeNDC: 0,
-  pendingNDC: 0,
   uniqueProducts: 0,
   productCodesUsed: 0,
-  pendingChanges: 0,
 });
   const [recent, setRecent] = useState([]);
   const [search, setSearch] = useState('');
@@ -70,10 +68,6 @@ setStats({
     (r) => r.status === 'Active'
   ).length,
 
-  pendingNDC: registry.filter(
-    (r) => r.status === 'Pending'
-  ).length,
-
   uniqueProducts: [
     ...new Set(
       registry
@@ -82,8 +76,6 @@ setStats({
     )
   ].length,
 
-
-  pendingChanges: 0,
 });
         setRecent(registry.slice(0, 5));
       }
@@ -106,22 +98,6 @@ setStats({
   console.error('Failed to fetch products:', error);
   setProductCodesUsed(0);
 }
-    try {
-      const res2 = await fetch('/api/changes', { cache: 'no-store' });
-      if (res2.ok) {
-        const data2 = await res2.json();
-        const changeItems = Array.isArray(data2?.data) ? data2.data : [];
-        if (data2.success) {
-          setStats((prev) => ({
-            ...prev,
-            pendingChanges: changeItems.filter((r) => r.status === 'Pending')
-              .length,
-          }));
-        }
-      }
-    } catch (e) {
-      console.log(e);
-    }
   }
 
   function handleSearch(e) {
@@ -245,12 +221,6 @@ setStats({
               sub: 'Unique drugs',
               href: '/products',
             },
-            // {
-            //   label: 'Pending',
-            //   value: stats.pendingChanges,
-            //   sub: 'Change requests',
-            //   color: stats.pendingChanges > 0 ? '#C4520A' : '#1A1A1A',
-            // },
           ].map((c, i) => (
             <div
               key={i}
@@ -327,8 +297,7 @@ setStats({
               </div>
               <div style={s.healthLegend}>
                 <div><span style={{ ...s.legendDot, background: '#2D6A4F' }} />Active <strong>{stats.activeNDC}</strong></div>
-                <div><span style={{ ...s.legendDot, background: '#E8650A' }} />Pending <strong>{stats.pendingNDC}</strong></div>
-                <div><span style={{ ...s.legendDot, background: '#D6D0C7' }} />Other <strong>{Math.max(stats.totalNDC - stats.activeNDC - stats.pendingNDC, 0)}</strong></div>
+                <div><span style={{ ...s.legendDot, background: '#D6D0C7' }} />Other <strong>{Math.max(stats.totalNDC - stats.activeNDC, 0)}</strong></div>
               </div>
             </div>
             <div style={s.capacityRow}><span>Product code capacity</span><strong>{codeCapacity}%</strong></div>

@@ -39,6 +39,8 @@ export default function AdminHubPage() {
 
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [hoveredActivity, setHoveredActivity] = useState(null);
+  const [hoveredRole, setHoveredRole] = useState(null);
 
   useEffect(() => {
     fetch('/api/me')
@@ -130,32 +132,10 @@ const spocCount = users.filter(
     })
     .slice(0, 5);
 
-  /*
-   * Build a simple 7-day user creation chart.
-   * No chart library needed.
-   */
-  const activityDays = [];
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - i);
-
-    const nextDate = new Date(date);
-    nextDate.setDate(nextDate.getDate() + 1);
-
-    const count = users.filter((u) => {
-      const created = new Date(u.created_at || u.createdAt || 0);
-      return created >= date && created < nextDate;
-    }).length;
-
-    activityDays.push({
-      label: date.toLocaleDateString('en-US', {
-        weekday: 'short',
-      }),
-      count,
-    });
-  }
+  const activityDays = [
+    { label: 'Active', count: stats.activeUsers, color: '#2D6A4F' },
+    { label: 'Inactive', count: inactiveUsers, color: '#B5ADA3' },
+  ];
 
   const maxActivity = Math.max(
     ...activityDays.map((day) => day.count),
@@ -164,9 +144,32 @@ const spocCount = users.filter(
 
   if (!user) return null;
 
+  const roleGradient = stats.totalUsers > 0
+    ? `conic-gradient(#E8650A 0 ${adminPercent}%, #F2B184 ${adminPercent}% ${adminPercent + spocPercent}%, #D8D0C8 ${adminPercent + spocPercent}% 100%)`
+    : '#EDE8E0';
+
   return (
     <Layout current="/admin">
-      <div style={s.page}>
+      <div style={s.page} className="admin-page">
+        <style jsx>{`
+          .admin-page :global(.admin-hoverable) {
+            transition: border-color 0.18s ease, background 0.18s ease;
+          }
+          .admin-page :global(.admin-hoverable:hover) {
+            border-color: #F2C9A8 !important;
+          }
+          .admin-page :global(.admin-refresh:hover) {
+            background: #FFF0E6 !important;
+            border-color: #E8650A !important;
+            color: #C4520A !important;
+          }
+          .admin-page :global(.admin-bar) { transition: height 0.3s ease, filter 0.18s ease, transform 0.18s ease; }
+          .admin-page :global(.admin-bar:hover) { filter: brightness(1.08); }
+          .admin-page :global(.admin-user-row) { transition: background 0.18s ease; }
+          .admin-page :global(.admin-user-row:hover), .admin-page :global(.admin-status-row:hover) { background: #FFF8F2 !important; box-shadow: inset 3px 0 0 #E8650A; }
+          .admin-page :global(.admin-status-row) { transition: background 0.18s ease; }
+          .admin-page :global(.admin-action:hover .admin-action-arrow) { color: #E8650A !important; }
+        `}</style>
 
         {/* HEADER */}
         <div style={s.pageHead}>
@@ -182,6 +185,7 @@ const spocCount = users.filter(
 
           <button
             style={s.refreshBtn}
+            className="admin-refresh"
             onClick={fetchStats}
           >
             ↻ Refresh
@@ -194,6 +198,7 @@ const spocCount = users.filter(
 
           <div
             style={s.statCard}
+            className="admin-hoverable"
             onClick={() => router.push('/admin/users')}
           >
             <div style={s.statTop}>
@@ -213,6 +218,7 @@ const spocCount = users.filter(
 
           <div
             style={s.statCard}
+            className="admin-hoverable"
         onClick={() => router.push('/admin/users?status=active')}
           >
             <div style={s.statTop}>
@@ -232,6 +238,7 @@ const spocCount = users.filter(
 
           <div
             style={s.statCard}
+            className="admin-hoverable"
           onClick={() => router.push('/admin/users?role=Admin')}
           >
             <div style={s.statTop}>
@@ -251,6 +258,7 @@ const spocCount = users.filter(
 
           <div
             style={s.statCard}
+            className="admin-hoverable"
             onClick={() => router.push('/admin/sessions')}
           >
             <div style={s.statTop}>
@@ -279,16 +287,16 @@ const spocCount = users.filter(
             <div style={s.panelHead}>
               <div>
                 <div style={s.panelTitle}>
-                  User Creation Activity
+                  Account Status
                 </div>
 
                 <div style={s.panelSub}>
-                  New accounts created over the last 7 days
+                  Current active and inactive system accounts
                 </div>
               </div>
 
               <div style={s.periodLabel}>
-                LAST 7 DAYS
+                CURRENT
               </div>
             </div>
 
@@ -321,7 +329,14 @@ const spocCount = users.filter(
                       <div
                         key={index}
                         style={s.barColumn}
+                        onMouseEnter={() => setHoveredActivity(day)}
+                        onMouseLeave={() => setHoveredActivity(null)}
                       >
+                        {hoveredActivity?.label === day.label && (
+                          <div style={s.chartTooltip}>
+                            <strong>{day.count}</strong> {day.label.toLowerCase()} account{day.count === 1 ? '' : 's'}
+                          </div>
+                        )}
                         <div style={s.barValue}>
                           {day.count > 0 ? day.count : ''}
                         </div>
@@ -330,7 +345,9 @@ const spocCount = users.filter(
                           style={{
                             ...s.bar,
                             height: `${height}%`,
+                            background: day.color,
                           }}
+                            className="admin-bar"
                         ></div>
 
                         <div style={s.barLabel}>
@@ -366,14 +383,26 @@ const spocCount = users.filter(
 
             <div style={s.roleContent}>
 
-              <div style={s.roleCenter}>
-                <div style={s.roleTotal}>
-                  {stats.totalUsers}
-                </div>
+              <div
+                style={{ ...s.roleCenter, background: roleGradient }}
+                onMouseEnter={() => setHoveredRole(true)}
+                onMouseLeave={() => setHoveredRole(false)}
+              >
+                <div style={s.roleCenterInner}>
+                  <div style={s.roleTotal}>
+                    {stats.totalUsers}
+                  </div>
 
-                <div style={s.roleTotalLabel}>
-                  USERS
+                  <div style={s.roleTotalLabel}>
+                    USERS
+                  </div>
                 </div>
+                {hoveredRole && (
+                  <div style={s.roleTooltip}>
+                    <strong>Role distribution</strong>
+                    <span>Admin {adminPercent}% · SPOC {spocPercent}% · Viewer {viewerPercent}%</span>
+                  </div>
+                )}
               </div>
 
 
@@ -383,18 +412,21 @@ const spocCount = users.filter(
                   label="Admin"
                   count={stats.admins}
                   percent={adminPercent}
+                  color="#E8650A"
                 />
 
                 <RoleRow
                   label="Spoc"
                   count={spocCount}
                   percent={spocPercent}
+                  color="#F2B184"
                 />
 
                 <RoleRow
                   label="Viewer"
                   count={viewerCount}
                   percent={viewerPercent}
+                  color="#B5ADA3"
                 />
 
               </div>
@@ -410,7 +442,7 @@ const spocCount = users.filter(
         <div style={s.bottomGrid}>
 
           {/* RECENT USERS */}
-          <div style={s.panel}>
+          <div style={s.panel} className="admin-hoverable">
 
             <div style={s.panelHead}>
               <div>
@@ -450,6 +482,7 @@ const spocCount = users.filter(
                           ? 'none'
                           : '1px solid #F3EFE9',
                     }}
+                          className="admin-user-row data-list-row"
                   >
 
                     <div style={s.userLeft}>
@@ -516,7 +549,7 @@ const spocCount = users.filter(
 
 
           {/* SYSTEM STATUS */}
-          <div style={s.panel}>
+          <div style={s.panel} className="admin-hoverable">
 
             <div style={s.panelHead}>
               <div>
@@ -588,14 +621,13 @@ const spocCount = users.filter(
             <div
               key={section.href}
               style={s.actionCard}
+              className="admin-action admin-hoverable"
               onClick={() => router.push(section.href)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#E8650A';
-                e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = '#EDE8E0';
-                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
 
@@ -615,7 +647,7 @@ const spocCount = users.filter(
 
               </div>
 
-              <div style={s.actionArrow}>
+              <div style={s.actionArrow} className="admin-action-arrow">
                 →
               </div>
 
@@ -635,12 +667,12 @@ const spocCount = users.filter(
 /* SMALL COMPONENTS */
 /* ------------------------------------------------ */
 
-function RoleRow({ label, count, percent }) {
+function RoleRow({ label, count, percent, color }) {
   return (
     <div style={s.roleRow}>
 
       <div style={s.roleRowTop}>
-        <span style={s.roleLabel}>
+        <span style={{ ...s.roleLabel, color }}>
           {label}
         </span>
 
@@ -654,6 +686,7 @@ function RoleRow({ label, count, percent }) {
           style={{
             ...s.roleFill,
             width: `${percent}%`,
+            background: color,
           }}
         ></div>
       </div>
@@ -665,7 +698,7 @@ function RoleRow({ label, count, percent }) {
 
 function StatusRow({ label, detail }) {
   return (
-    <div style={s.statusRow}>
+    <div style={s.statusRow} className="admin-status-row data-list-row">
 
       <div style={s.statusLeft}>
 
@@ -912,6 +945,23 @@ const s = {
     position: 'relative',
   },
 
+  chartTooltip: {
+    position: 'absolute',
+    bottom: '49px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '112px',
+    padding: '7px 8px',
+    borderRadius: '6px',
+    background: '#1A1A1A',
+    color: '#FFFFFF',
+    fontSize: '10px',
+    lineHeight: '1.35',
+    textAlign: 'center',
+    zIndex: 3,
+    pointerEvents: 'none',
+  },
+
   bar: {
     width: '24px',
     minHeight: '4px',
@@ -948,12 +998,42 @@ const s = {
     width: '105px',
     height: '105px',
     borderRadius: '50%',
-    border: '9px solid #FFF0E6',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    position: 'relative',
+    cursor: 'default',
+  },
+
+  roleCenterInner: {
+    width: '79px',
+    height: '79px',
+    borderRadius: '50%',
+    background: '#FFFFFF',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
+  },
+
+  roleTooltip: {
+    position: 'absolute',
+    left: 'calc(100% + 10px)',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '166px',
+    padding: '8px 10px',
+    borderRadius: '6px',
+    background: '#1A1A1A',
+    color: '#FFFFFF',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '3px',
+    fontSize: '10px',
+    lineHeight: '1.35',
+    zIndex: 3,
+    pointerEvents: 'none',
   },
 
   roleTotal: {
