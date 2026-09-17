@@ -1,37 +1,329 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# NDC Management System
 
-## Getting Started
+A web-based **NDC (National Drug Code) Management System** designed to manage pharmaceutical product, package, NDC, user, and audit information through a role-based workflow.
 
-First, run the development server:
+The system provides a centralized interface for managing product and package information, generating and maintaining NDC records, controlling user access, and tracking important system activities through audit logs.
+
+## Live Application
+
+**Vercel Deployment:**
+https://stackblitz-ndc.vercel.app/
+
+## Overview
+
+The NDC Management System is designed around the workflow involved in managing pharmaceutical product and package information.
+
+The application provides different levels of access for users and separates operational responsibilities using role-based access control.
+
+The system uses the FDA-assigned labeler code:
+
+```text
+70095
+```
+
+NDCs are represented using the standard 10-digit NDC format:
+
+```text
+70095-001-01
+```
+
+where:
+
+* `70095` → Labeler Code
+* `001` → Product Code
+* `01` → Package Code
+
+## Features
+
+### Product Management
+
+* Create and manage pharmaceutical products
+* Assign unique 3-digit product codes
+* Store product name, strength, dosage form, Rx/OTC classification, and ANDA number
+* Edit product information based on user permissions
+* Track product status
+
+### Package Management
+
+* Create packages associated with products
+* Assign unique 2-digit package codes
+* Store package size, unit, and description
+* Prevent duplicate product/package combinations
+* Manage package information through the application
+
+### NDC Registry
+
+* View registered NDC records
+* Display complete NDC values
+* Search and filter registry data
+* Track associated product and package information
+* Support table-level filtering and pagination
+
+### Role-Based Access Control
+
+The application supports three primary roles:
+
+| Role       | Access                                            |
+| ---------- | ------------------------------------------------- |
+| **Admin**  | Full system and user management access            |
+| **SPOC**   | Product, package, and operational data management |
+| **Viewer** | Read-only access                                  |
+
+Administrators can manage users and control active/inactive SPOC access.
+
+### Audit Logging
+
+Important system activities are recorded through audit logs.
+
+The audit system is designed to track:
+
+* User performing an action
+* Action type
+* Affected record
+* Previous value
+* New value
+* Timestamp
+
+This provides traceability for changes made within the system.
+
+### Authentication
+
+The application includes authenticated access and role-based authorization to ensure users can only perform actions permitted by their assigned role.
+
+## Technology Stack
+
+### Frontend
+
+* **Next.js**
+* **React**
+* **JavaScript**
+* **CSS**
+
+### Backend
+
+* **Next.js API Routes**
+* REST-style API endpoints
+
+### Database
+
+* **PostgreSQL** during the initial application development
+* **Microsoft SQL Server** for database migration/development
+
+### Deployment
+
+* **Vercel**
+
+## Project Structure
+
+```text
+stackblitz-ndc/
+│
+├── app/
+│   ├── api/
+│   │   ├── auth/
+│   │   ├── products/
+│   │   ├── packages/
+│   │   ├── ndc/
+│   │   ├── users/
+│   │   └── audit/
+│   │
+│   ├── dashboard/
+│   ├── products/
+│   ├── packages/
+│   ├── ndc-registry/
+│   └── audit/
+│
+├── components/
+│
+├── lib/
+│   └── jsonDB/
+│
+├── public/
+│
+├── package.json
+└── README.md
+```
+
+> The exact folder structure may change as the application continues to evolve.
+
+## Database Design
+
+The core database entities include:
+
+### Products
+
+Stores pharmaceutical product information.
+
+```text
+products
+├── id
+├── product_code
+├── product_name
+├── strength
+├── dosage_form
+├── rx_otc
+├── anda_number
+├── status
+├── created_by
+└── created_at
+```
+
+### Packages
+
+Stores package information associated with products.
+
+```text
+packages
+├── id
+├── product_id / product_code
+├── package_code
+├── package_size
+├── unit
+├── description
+├── created_by
+└── created_at
+```
+
+### Users
+
+Stores application users and their assigned roles.
+
+```text
+users
+├── id
+├── name
+├── email
+├── password
+├── role
+├── status
+└── created_at
+```
+
+### Audit Log
+
+Stores system activity and changes.
+
+```text
+audit_log
+├── id
+├── action
+├── performed_by
+├── record_id
+├── old_value
+├── new_value
+└── timestamp
+```
+
+## NDC Structure
+
+The application follows the three-part NDC structure:
+
+```text
+Labeler Code - Product Code - Package Code
+```
+
+Example:
+
+```text
+70095-001-01
+```
+
+Product and package codes are controlled separately to maintain consistent NDC generation.
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/kamal-kdk15/stackblitz-ndc-management.git
+cd stackblitz-ndc-management
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the project root.
+
+Example:
+
+```env
+DATABASE_URL=your_database_connection_string
+```
+
+Add any additional authentication or service-specific environment variables required by your deployment.
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+## Deployment
 
-## Learn More
+The application can be deployed using **Vercel**.
 
-To learn more about Next.js, take a look at the following resources:
+Typical deployment workflow:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+GitHub Repository
+       ↓
+     Vercel
+       ↓
+Production Application
+       ↓
+Database
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Environment variables must be configured in the Vercel project settings before deploying database-dependent functionality.
 
-## Deploy on Vercel
+## Security Considerations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application is designed with several security considerations:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-# ndc2
+* Role-based authorization
+* Authenticated API access
+* Database-backed user management
+* Audit logging
+* Server-side database operations
+* Environment variables for sensitive configuration
+* Validation of product and package codes
+
+Production deployments should additionally use secure password hashing, appropriate session management, rate limiting, database-level permissions, and HTTPS.
+
+## Future Improvements
+
+Potential improvements include:
+
+* More advanced analytics and dashboard insights
+* Enhanced audit-log filtering
+* Database-level audit triggers
+* Improved authentication security
+* Login attempt monitoring
+* Advanced reporting and export functionality
+* Additional validation and workflow controls
+* Expanded SQL Server production integration
+
+## Project Purpose
+
+This project was developed to demonstrate the design and implementation of a **role-based pharmaceutical data management system** with a focus on structured data management, authentication, auditing, database integration, and deployment.
+
+It combines frontend application development with backend API design and relational database management in a production-oriented workflow.
+
+## Author
+
+**Kamal Deep Kaur**
+
+* GitHub: https://github.com/kamal-kdk15
+* Portfolio: https://portfolio-u488.vercel.app/
+* LinkedIn: https://www.linkedin.com/in/kamal-deep-kaur-48763123a/
