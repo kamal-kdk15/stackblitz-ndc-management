@@ -73,7 +73,7 @@ export default function Layout({ children, current }) {
         <div style={s.brand}>
           <div style={{ ...s.brandTop, ...(collapsed ? s.brandTopCollapsed : {}) }}>
             {!collapsed && <img src="/sunpharma.png" alt="Sun Pharma" style={s.brandImg} />}
-            {collapsed && <div style={s.brandMark}>S</div>}
+            {collapsed && <img src="/sunpharma.png" alt="Sun Pharma" style={s.brandImgCollapsed} />}
             <button
               style={s.collapseBtn}
               onClick={() => setCollapsed(!collapsed)}
@@ -119,11 +119,23 @@ export default function Layout({ children, current }) {
           })}
         </nav>
 
-        <div style={s.footer}>
+        <div style={{ ...s.footer, ...(collapsed ? s.footerCollapsed : {}) }}>
           {collapsed ? (
-            <div style={s.avatarCollapsed} title={`${user?.name} (${user?.role})`}>
-              {user?.name?.charAt(0) || 'U'}
-            </div>
+            <>
+              <div style={s.avatarCollapsed} title={`${user?.name} (${user?.role})`}>
+                {user?.name?.charAt(0) || 'U'}
+              </div>
+              <button
+                style={{ ...s.logoutButton, ...s.logoutButtonCollapsed, ...(logoutHovered ? s.logoutButtonHover : {}) }}
+                onClick={handleLogout}
+                onMouseEnter={() => setLogoutHovered(true)}
+                onMouseLeave={() => setLogoutHovered(false)}
+                title="Log out"
+                aria-label="Log out"
+              >
+                <span aria-hidden="true" style={s.logoutIcon}>⎋</span>
+              </button>
+            </>
           ) : (
             <div style={s.userCard}>
               <div style={s.avatar}>{user?.name?.charAt(0) || 'U'}</div>
@@ -168,8 +180,9 @@ const s = {
   },
   brand: { padding: '16px 16px 14px', borderBottom: '1px solid #EDE8E0' },
   brandTop: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' },
-  brandTopCollapsed: { flexDirection: 'column', gap: '10px' },
+  brandTopCollapsed: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' },
   brandImg: { height: '48px', objectFit: 'contain' },
+  brandImgCollapsed: { width: '38px', height: '38px', objectFit: 'contain', display: 'block' },
   brandMark: {
     width: '32px',
     height: '32px',
@@ -235,6 +248,7 @@ const s = {
   activeDot: { width: '5px', height: '5px', borderRadius: '50%', background: '#C4520A', position: 'absolute', right: '10px' },
 
   footer: { padding: '12px', borderTop: '1px solid #EDE8E0' },
+  footerCollapsed: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' },
   userCard: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', background: '#FAF8F5', border: '1px solid #EDE8E0' },
   avatar: { width: '34px', height: '34px', borderRadius: '50%', background: '#E8650A', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 },
   avatarCollapsed: { width: '34px', height: '34px', borderRadius: '50%', background: '#E8650A', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', margin: '0 auto', cursor: 'default' },
@@ -258,6 +272,7 @@ const s = {
     justifyContent: 'center',
     gap: '6px',
   },
+  logoutButtonCollapsed: { minWidth: '34px', width: '34px', padding: '7px' },
   logoutIcon: { fontSize: '17px', lineHeight: 1 },
   logoutButtonHover: {
     background: '#FFF0E6',
