@@ -1,1 +1,3 @@
 # Dev Log
+### 2026-09-17 11:21 IST
+- Auto-logged checkpoint. Add real notes here manually when you touch the code.
